@@ -2,9 +2,10 @@
 import flet as ft
 import asyncio
 from flet import Icons
-from app.components.nav2 import nav2_bar
+from app.components.nav_bar import nav_bar
 from app.components.menu_inferior import menu_inferior
 from app.components.ModalReporte import ModalReporte
+from app.components.ModalTarjetaCompleta import ModalTarjetaCompleta
 
 
 def pantalla_inicio(page: ft.Page, cambiar_pantalla):
@@ -29,12 +30,27 @@ def pantalla_inicio(page: ft.Page, cambiar_pantalla):
     TEXT_COLOR = "#000000"
     BORDER_COLOR = "#D9D9D9"
 
-    # ---------------- INSTANCIA DEL MODAL REPORTE ----------------
+    # ---------------- INSTANCIA DE MODAL REPORTE Y TARJETA ----------------
     modal_reporte = ModalReporte()
     page.overlay.append(modal_reporte.dialog)
 
+    modal_detalle = ModalTarjetaCompleta()
+    page.overlay.append(modal_detalle.dialog)
+
+    def abrir_modal_detalle(nombre, profesion, descripcion, costo, calificacion):
+        print("CLICK -> abrir_modal_detalle:", nombre)  # <-- mira la consola donde corres Flet
+        modal_detalle.set_content(nombre, profesion, descripcion, costo, calificacion)
+        page.dialog = modal_detalle.dialog
+        modal_detalle.dialog.open = True
+        page.update()
+
     # ---------------- NAV SUPERIOR ----------------
-    nav = nav2_bar(page.width, ft.Ref[ft.Container]())
+    nav = nav_bar(
+        page,
+        page.width,
+        show_back=False,  # 👉 en Inicio NO aparece la flecha
+        show_explora=False,  # 👉 en Inicio NO aparece "Explora en"
+    )
 
     # ---------------- FRASES CAMBIANTES + BOTÓN INICIO SESIÓN ----------------
     frases = [
@@ -78,10 +94,11 @@ def pantalla_inicio(page: ft.Page, cambiar_pantalla):
             style=ft.ButtonStyle(
                 shape=ft.RoundedRectangleBorder(radius=20),
                 padding=ft.padding.symmetric(horizontal=15)
-            )
+            ),
+            on_click=lambda e: cambiar_pantalla("login")
         ),
         alignment=ft.alignment.top_right,
-        padding=ft.padding.only(right=15, top=6)
+        padding=ft.padding.only(right=15, top=3)
     )
 
     stack_header = ft.Stack(
@@ -119,17 +136,36 @@ def pantalla_inicio(page: ft.Page, cambiar_pantalla):
                         spacing=4
                     )
                 )
-            frase_texto.update()
+            page.update()
             index = (index + 1) % len(frases)
 
     page.run_task(cambiar_frase)
 
     # ---------------- CATEGORÍAS ----------------
+
     categorias_titulo = ft.Container(
         content=ft.Row(
             [
-                ft.Text("Categorías", size=20, weight=ft.FontWeight.BOLD, color=TEXT_COLOR),
-                ft.Text("Ver todos", size=14, weight=ft.FontWeight.W_600, color=TEXT_COLOR),
+                ft.Text(
+                    "Categorías",
+                    size=20,
+                    weight=ft.FontWeight.BOLD,
+                    color=TEXT_COLOR
+                ),
+
+                # "Ver todos" como texto clickeable en color negro
+                ft.GestureDetector(
+                    on_tap=lambda e: cambiar_pantalla("categorias"),
+                    content=ft.Container(
+                        padding=ft.padding.symmetric(horizontal=6, vertical=4),
+                        content=ft.Text(
+                            "Ver todos",
+                            size=14,
+                            weight=ft.FontWeight.W_600,
+                            color="black"  # <- forzamos negro aquí
+                        )
+                    )
+                )
             ],
             alignment=ft.MainAxisAlignment.SPACE_BETWEEN
         ),
@@ -181,96 +217,95 @@ def pantalla_inicio(page: ft.Page, cambiar_pantalla):
     # ---------------- FUNCIÓN TARJETA (ESTILO VERTICAL) ----------------
     def tarjeta_horizontal(nombre, profesion, descripcion, costo, calificacion=4):
         mostrar_boton = len(descripcion) > 70
+
         stars = ft.Row(
-            [
-                ft.Icon(ft.Icons.STAR if i < calificacion else ft.Icons.STAR_BORDER,
-                        color=PRIMARY_COLOR, size=14)
-                for i in range(5)
-            ],
+            [ft.Icon(ft.Icons.STAR if i < calificacion else ft.Icons.STAR_BORDER,
+                     color=PRIMARY_COLOR, size=14) for i in range(5)],
             spacing=0,
             alignment=ft.MainAxisAlignment.CENTER
         )
 
+        # 🔧 Menu con posición y tamaño explícitos (NO cubrirá la tarjeta)
         menu = ft.Container(
             content=ft.PopupMenuButton(
                 icon=ft.Icons.MORE_HORIZ,
                 icon_color=TEXT_COLOR,
                 items=[
-                    ft.PopupMenuItem(
-                        content=ft.Row([ft.Icon(ft.Icons.BOOKMARK_BORDER, size=14, color=TEXT_COLOR),
-                                        ft.Text("Guardar", color=TEXT_COLOR)], spacing=6)
-                    ),
-                    ft.PopupMenuItem(
-                        content=ft.Row([ft.Icon(Icons.ERROR_OUTLINE, size=16, color=TEXT_COLOR),
-                                        ft.Text("Reportar", color=TEXT_COLOR)], spacing=8),
-                        on_click=lambda e: modal_reporte.show(page),
-                    ),
+                    ft.PopupMenuItem(content=ft.Row([ft.Icon(ft.Icons.BOOKMARK_BORDER, size=14, color=TEXT_COLOR),
+                                                     ft.Text("Guardar", color=TEXT_COLOR)], spacing=6)),
+                    ft.PopupMenuItem(content=ft.Row([ft.Icon(Icons.ERROR_OUTLINE, size=16, color=TEXT_COLOR),
+                                                     ft.Text("Reportar", color=TEXT_COLOR)], spacing=8),
+                                     on_click=lambda e: modal_reporte.show(page)),
                 ]
             ),
-            alignment=ft.alignment.top_right,
-            padding=0,
-            margin=ft.Margin(0, -10, -10, 0)
+            # Posicionamiento dentro del Stack (evita cubrir la tarjeta)
+            top=-6,
+            right=-6,
+            width=36,
+            height=36,
         )
 
-        def mostrar_detalle(e):
-            page.dialog = ft.AlertDialog(
-                title=ft.Text("Descripción completa", weight=ft.FontWeight.BOLD),
-                content=ft.Text(descripcion),
-                actions=[ft.TextButton("Cerrar", on_click=lambda e: setattr(page.dialog, "open", False))]
+        # Contenido principal
+        tarjeta_contenido = ft.Container(
+            padding=ft.padding.only(top=10),
+            content=ft.Column(
+                [
+                    ft.CircleAvatar(radius=30, bgcolor=ft.Colors.GREY_300),
+                    ft.Text(f"COP {costo}/h", size=11, color=TEXT_COLOR, text_align=ft.TextAlign.CENTER),
+                    ft.Container(height=8),
+                    ft.Text(nombre, weight=ft.FontWeight.BOLD, size=17, color=TEXT_COLOR,
+                            text_align=ft.TextAlign.CENTER),
+                    stars,
+                    ft.Text(profesion, size=14, weight=ft.FontWeight.W_500, color=TEXT_COLOR,
+                            text_align=ft.TextAlign.CENTER),
+                    ft.Text("Descripción:", size=12, color=ft.Colors.BLACK54, text_align=ft.TextAlign.CENTER),
+
+                    ft.Container(
+                        content=ft.Text(
+                            descripcion,
+                            size=11,
+                            max_lines=2,
+                            overflow=ft.TextOverflow.ELLIPSIS,
+                            color=TEXT_COLOR,
+                            text_align=ft.TextAlign.CENTER
+                        ),
+                        height=32,
+                        alignment=ft.alignment.center
+                    ),
+
+                    # Botón Ver más con cursor y on_click
+                    ft.Container(
+                        content=ft.TextButton(
+                            "Ver más" if mostrar_boton else "",
+                            on_click=(lambda e: abrir_modal_detalle(nombre, profesion, descripcion, costo,
+                                                                    calificacion)) if mostrar_boton else None,
+                            style=ft.ButtonStyle(
+                                color=PRIMARY_COLOR if mostrar_boton else "transparent",
+                                padding=0,
+                                text_style=ft.TextStyle(size=11)
+                            )
+                        ),
+                        margin=ft.margin.only(top=-3)  # 🔹 lo sube 6px
+                    )
+
+                ],
+                alignment=ft.MainAxisAlignment.CENTER,
+                horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                spacing=3
             )
-            page.dialog.open = True
-            page.update()
+        )
 
         return ft.Container(
             width=180,
-            height=250,
+            height=270,
             padding=8,
             bgcolor="white",
             border_radius=14,
             border=ft.border.all(1, BORDER_COLOR),
             content=ft.Stack(
+                # IMPORTANTE: contenido primero, menu después (menu pequeño y posicionado)
                 controls=[
-                    ft.Container(
-                        padding=ft.padding.only(top=10),
-                        content=ft.Column(
-                            [
-                                ft.CircleAvatar(radius=30, bgcolor=ft.Colors.GREY_300),
-                                ft.Text(f"COP {costo}/h", size=11, color=TEXT_COLOR, text_align=ft.TextAlign.CENTER),
-                                ft.Container(height=10),
-                                ft.Text(nombre, weight=ft.FontWeight.BOLD, size=17, color=TEXT_COLOR,
-                                        text_align=ft.TextAlign.CENTER),
-                                stars,
-                                ft.Text(profesion, size=14, weight=ft.FontWeight.W_500, color=TEXT_COLOR,
-                                        text_align=ft.TextAlign.CENTER),
-                                ft.Text("Descripción:", size=12, color=ft.Colors.BLACK54,
-                                        text_align=ft.TextAlign.CENTER),
-                                ft.Container(
-                                    content=ft.Text(
-                                        descripcion,
-                                        size=11,
-                                        max_lines=2,
-                                        overflow=ft.TextOverflow.ELLIPSIS,
-                                        color=TEXT_COLOR,
-                                        text_align=ft.TextAlign.CENTER
-                                    ),
-                                    height=32,
-                                    alignment=ft.alignment.center
-                                ),
-                                ft.TextButton(
-                                    "Ver más" if mostrar_boton else " ",
-                                    on_click=mostrar_detalle if mostrar_boton else None,
-                                    style=ft.ButtonStyle(
-                                        color=PRIMARY_COLOR if mostrar_boton else "transparent",
-                                        padding=0,
-                                        text_style=ft.TextStyle(size=11)
-                                    )
-                                )
-                            ],
-                            alignment=ft.MainAxisAlignment.CENTER,
-                            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-                            spacing=0
-                        )
-                    ),
+                    tarjeta_contenido,
                     menu
                 ]
             )
@@ -361,15 +396,15 @@ def pantalla_inicio(page: ft.Page, cambiar_pantalla):
     selected_index = 0
 
     def on_bottom_nav_click(index):
-        nonlocal selected_index
-        selected_index = index
-        if index == 0:
+        if index == 0:  # Inicio
             cambiar_pantalla("inicio")
-        elif index == 2:
+        elif index == 1:  # Categorias
             cambiar_pantalla("categorias")
-        elif index == 3:
+        elif index == 2:  # Mensajes
+            cambiar_pantalla("mensajes")
+        elif index == 3:  # Guardados
             cambiar_pantalla("guardados")
-        elif index == 4:
+        elif index == 4:  # Menú
             cambiar_pantalla("menu")
 
     menu = menu_inferior(selected_index, on_bottom_nav_click)
@@ -399,7 +434,7 @@ def pantalla_inicio(page: ft.Page, cambiar_pantalla):
 
     # ---------------- RESPONSIVE ----------------
     def on_resize(e):
-        layout.controls[0] = nav2_bar(page.width, ft.Ref[ft.Container]())
+        layout.controls[0] = nav_bar(page.width, ft.Ref[ft.Container]())
         page.update()
 
     page.on_resize = on_resize

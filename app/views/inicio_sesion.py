@@ -4,7 +4,7 @@ import re
 from app.components.nav_bar import nav_bar
 
 
-def inicio_sesion(page: ft.Page):
+def inicio_sesion(page: ft.Page, cambiar_pantalla):
     page.title = "Inicio de sesión"
     max_content_width = 600
 
@@ -68,8 +68,7 @@ def inicio_sesion(page: ft.Page):
         page.update()
 
     def crear_cuenta(e):
-        from .registrarse import registro
-        registro(page)
+        cambiar_pantalla("registro")
 
     def build_content(page_width):
         container_width = min(page_width * 0.95, max_content_width)
@@ -77,7 +76,13 @@ def inicio_sesion(page: ft.Page):
             spacing=0,
             horizontal_alignment=ft.CrossAxisAlignment.CENTER,
             controls=[
-                nav_bar(page_width),
+                # ---------------- NAV SUPERIOR ----------------
+                nav_bar(
+                    page,
+                    page_width,
+                    show_back=True,
+                    on_back_click=lambda e: cambiar_pantalla("inicio")
+                ),
 
                 ft.Container(
                     width=container_width,
@@ -125,8 +130,11 @@ def inicio_sesion(page: ft.Page):
                                 )
                             ),
                             ft.TextButton("¿Olvidaste tu contraseña?", on_click=olvidar_contrasena),
-                            ft.TextButton("Crear una cuenta", on_click=crear_cuenta,
-                                          style=ft.ButtonStyle(text_style=ft.TextStyle(font_family="OswaldMedium")))
+                            ft.TextButton(
+                                "Crear una cuenta",
+                                on_click=crear_cuenta,
+                                style=ft.ButtonStyle(text_style=ft.TextStyle(font_family="OswaldMedium"))
+                            )
                         ]
                     )
                 )

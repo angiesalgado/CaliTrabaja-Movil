@@ -1,5 +1,5 @@
 import flet as ft
-from app.components.nav3 import nav3_bar
+from app.components.nav_bar import nav_bar
 from app.components.menu_inferior import menu_inferior
 
 def pantalla_categorias(page: ft.Page, cambiar_pantalla):
@@ -76,21 +76,27 @@ def pantalla_categorias(page: ft.Page, cambiar_pantalla):
             fila = []
 
     # Este índice representa "Categorías"
-    selected_index = 2
+    selected_index = 1
 
     def on_bottom_nav_click(index):
         if index == 0:   # Inicio
             cambiar_pantalla("inicio")
-        elif index == 1: # Cuenta
-            cambiar_pantalla("cuenta")
-        elif index == 2: # Categorías
+        elif index == 1: # Categorias
             cambiar_pantalla("categorias")
+        elif index == 2: # Mensajes
+            cambiar_pantalla("mensajes")
         elif index == 3: # Guardados
             cambiar_pantalla("guardados")
         elif index == 4: # Menú
             cambiar_pantalla("menu")
 
-    nav = nav3_bar(page.width, lambda e: cambiar_pantalla("inicio"))
+    nav = nav_bar(
+        page,
+        page.width,
+        show_back=True,
+        show_explora=True,
+        on_back_click=lambda e: cambiar_pantalla("inicio")
+    )
     menu = menu_inferior(selected_index, on_bottom_nav_click)
 
     contenido = ft.Column(

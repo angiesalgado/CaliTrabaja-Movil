@@ -2,7 +2,7 @@ import flet as ft
 import re
 from app.components.nav_bar import nav_bar
 
-def registro(page: ft.Page):
+def registro(page: ft.Page, cambiar_pantalla):
     page.title = "Registrarse"
     page.scroll = "adaptive"
     max_content_width = 600
@@ -35,8 +35,7 @@ def registro(page: ft.Page):
         page.update()
 
     def ir_a_login(e):
-        from .inicio_sesion import inicio_sesion
-        inicio_sesion(page)
+        cambiar_pantalla("login")
 
     def password_toggle_factory(field):
         visible = {"value": False}
@@ -80,7 +79,14 @@ def registro(page: ft.Page):
             spacing=20,
             horizontal_alignment=ft.CrossAxisAlignment.CENTER,
             controls=[
-                nav_bar(page_width),
+                # ---------------- NAV SUPERIOR ----------------
+                nav_bar(
+                    page,
+                    page_width,
+                    show_back=True,
+                    on_back_click=lambda e: cambiar_pantalla("login")
+                ),
+
                 ft.Container(
                     width=container_width,  # <-- AÑADE ESTO
                     padding=ft.padding.only(top=40),

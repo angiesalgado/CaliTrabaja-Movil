@@ -4,8 +4,8 @@ import flet as ft
 def menu_inferior(selected_index: int, on_bottom_nav_click, labels_visible=True):
     bottom_items = [
         {"icon": ft.Icons.HOME_OUTLINED, "label": "Inicio"},
-        {"icon": ft.Icons.PERSON, "label": "Cuenta"},
         {"icon": ft.Icons.GRID_VIEW, "label": "Categorías"},
+        {"icon": ft.Icons.CHAT, "label": "Mensajes"},
         {"icon": ft.Icons.BOOKMARK_OUTLINE, "label": "Guardados"},
         {"icon": ft.Icons.MENU, "label": "Menú"},
     ]

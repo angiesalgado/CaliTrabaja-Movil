@@ -193,17 +193,16 @@ def render_guardados(page: ft.Page, cambiar_pantalla=None):
 
     # ---------- Navegación inferior ----------
     def on_bottom_nav_click(index):
-        if cambiar_pantalla:
-            if index == 0:   # Inicio
-                cambiar_pantalla("inicio")
-            elif index == 1: # Cuenta / Perfil
-                cambiar_pantalla("cuenta")
-            elif index == 2: # Categorías
-                cambiar_pantalla("categorias")
-            elif index == 3: # Guardados
-                cambiar_pantalla("guardados")
-            elif index == 4: # Menú
-                cambiar_pantalla("menu")
+        if index == 0:  # Inicio
+            cambiar_pantalla("inicio")
+        elif index == 1:  # Categorias
+            cambiar_pantalla("categorias")
+        elif index == 2:  # Mensajes
+            cambiar_pantalla("mensajes")
+        elif index == 3:  # Guardados
+            cambiar_pantalla("guardados")
+        elif index == 4:  # Menú
+            cambiar_pantalla("menu")
 
     # Barra inferior
     page.bottom_appbar = ft.BottomAppBar(

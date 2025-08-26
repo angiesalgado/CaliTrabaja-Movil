@@ -9,8 +9,11 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 from app.views.Inicio import pantalla_inicio
 from app.views.menu import pantalla_menu
 from app.views.categorias import pantalla_categorias
-from app.views.Guardados import render_guardados  #  función de Guardados
-
+from app.views.mensajes import pantalla_mensajes
+from app.views.Guardados import render_guardados
+from app.views.publicaciones import publicaciones
+from app.views.inicio_sesion import inicio_sesion
+from app.views.registrarse import registro
 
 def main(page: ft.Page):
     page.title = "Mi App"
@@ -40,20 +43,22 @@ def main(page: ft.Page):
             pantalla_inicio(page, cambiar_pantalla)
         elif destino == "menu":
             pantalla_menu(page, cambiar_pantalla)
+        elif destino == "mensajes":
+            pantalla_mensajes(page, cambiar_pantalla)
         elif destino == "categorias":
             pantalla_categorias(page, cambiar_pantalla)
         elif destino == "guardados":  #  Ahora está bien conectado
             render_guardados(page, cambiar_pantalla)
+        elif destino == "publicaciones":
+            publicaciones(page, cambiar_pantalla)
+        elif destino == "login":
+            inicio_sesion(page, cambiar_pantalla)
+        elif destino == "registro":
+            registro(page, cambiar_pantalla)
 
     #  Pantalla inicial por defecto
     pantalla_inicio(page, cambiar_pantalla)
 
 
-#  Para ejecutar la app y permitir acceso desde el móvil en red local
 if __name__ == "__main__":
-    ft.app(
-        target=main,
-        view=ft.WEB_BROWSER,
-        host="0.0.0.0",  # Esto permite acceso desde otros dispositivos en tu red
-        port=8551
-    )
+    ft.app(target=main, view=ft.AppView.WEB_BROWSER)

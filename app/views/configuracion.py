@@ -88,18 +88,17 @@ def pantalla_configuracion(page: ft.Page, cambiar_pantalla=None):
         return field
 
     # ---------- NAV INFERIOR (usa cambiar_pantalla) ----------
-    def on_bottom_nav_click(index: int):
-        if not cambiar_pantalla:
-            return
-        if index == 0:      # Inicio
+    def on_bottom_nav_click(index):
+        if index == 0:  # Inicio
             cambiar_pantalla("inicio")
-        elif index == 2:    # Categorías
+        elif index == 1:  # Categorias
             cambiar_pantalla("categorias")
-        elif index == 3:    # Guardados
+        elif index == 2:  # Mensajes
+            cambiar_pantalla("mensajes")
+        elif index == 3:  # Guardados
             cambiar_pantalla("guardados")
-        elif index == 4:    # Menú
+        elif index == 4:  # Menú
             cambiar_pantalla("menu")
-        # índice 1 ("Cuenta") sin destino por ahora
 
     # ---------- SUBVISTAS ----------
     def cambiar_contrasena():
