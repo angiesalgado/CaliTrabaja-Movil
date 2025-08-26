@@ -65,45 +65,26 @@ def render_guardados(page: ft.Page, cambiar_pantalla=None):
         if len(descripcion) > 300:
             descripcion = descripcion[:300] + "..."
 
-        #  Menú de opciones con "X" y "Reportar"
         menu = ft.Container(
             content=ft.PopupMenuButton(
                 icon=ft.Icons.MORE_HORIZ,
                 icon_color="black",
                 items=[
-                    #  X en la esquina superior derecha pegada al borde
                     ft.PopupMenuItem(
                         content=ft.Container(
-                            content=ft.IconButton(
-                                icon=ft.Icons.CLOSE,
-                                icon_color="black",
-                                icon_size=20,
-                                on_click=lambda e: e.control.page.close_popup(),
-                            ),
-                            alignment=ft.alignment.top_right,
-                            padding=0,
-                            margin=ft.margin.only(top=-26, right=-18),
-                        ),
-
-                    ),
-
-                    ft.PopupMenuItem(
-                        content=ft.Container(
+                            width=50,  # 🔹 Controla el ancho del menú
                             content=ft.Row(
                                 [
                                     ft.Icon(ft.Icons.ERROR_OUTLINE, size=18, color="black"),
-                                    ft.Text("Reportar", size=15, weight="bold", color="black"),
+                                    ft.Text("Reportar", size=14, weight="bold", color="black"),
                                 ],
                                 spacing=6,
                                 alignment="start",
                             ),
-                            margin=ft.margin.only(top=-40),
-                            padding=0,
+                            padding=ft.padding.symmetric(horizontal=8, vertical=6),
                         ),
-                        on_click=lambda e: modal_reporte.show(page),
-                        height=20,
-
-                    ),
+                        on_click=lambda e: modal_reporte.show(e.page),
+                    )
                 ],
             ),
             alignment=ft.alignment.top_right,
