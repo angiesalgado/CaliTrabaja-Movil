@@ -6,6 +6,7 @@ from app.components.nav_bar import nav_bar
 from app.components.menu_inferior import menu_inferior
 from app.components.ModalReporte import ModalReporte
 from app.components.ModalTarjetaCompleta import ModalTarjetaCompleta
+from app.components.MenuTarjetasOpciones import menu_opciones
 
 
 def pantalla_inicio(page: ft.Page, cambiar_pantalla):
@@ -172,6 +173,7 @@ def pantalla_inicio(page: ft.Page, cambiar_pantalla):
         padding=ft.padding.symmetric(horizontal=15, vertical=8)
     )
 
+
     categorias = [
         {"nombre": "Categoría 1", "icono": "tecnico.svg"},
         {"nombre": "Categoría 2", "icono": "cuidado.svg"},
@@ -225,25 +227,9 @@ def pantalla_inicio(page: ft.Page, cambiar_pantalla):
             alignment=ft.MainAxisAlignment.CENTER
         )
 
-        # 🔧 Menu con posición y tamaño explícitos (NO cubrirá la tarjeta)
-        menu = ft.Container(
-            content=ft.PopupMenuButton(
-                icon=ft.Icons.MORE_HORIZ,
-                icon_color=TEXT_COLOR,
-                items=[
-                    ft.PopupMenuItem(content=ft.Row([ft.Icon(ft.Icons.BOOKMARK_BORDER, size=14, color=TEXT_COLOR),
-                                                     ft.Text("Guardar", color=TEXT_COLOR)], spacing=6)),
-                    ft.PopupMenuItem(content=ft.Row([ft.Icon(Icons.ERROR_OUTLINE, size=16, color=TEXT_COLOR),
-                                                     ft.Text("Reportar", color=TEXT_COLOR)], spacing=8),
-                                     on_click=lambda e: modal_reporte.show(page)),
-                ]
-            ),
-            # Posicionamiento dentro del Stack (evita cubrir la tarjeta)
-            top=-6,
-            right=-6,
-            width=36,
-            height=36,
-        )
+
+        # Menú con Guardar + Reportar
+        menu = menu_opciones(page, modal_reporte, text_color=TEXT_COLOR, incluir_guardar=True)
 
         # Contenido principal
         tarjeta_contenido = ft.Container(
@@ -303,10 +289,13 @@ def pantalla_inicio(page: ft.Page, cambiar_pantalla):
             border_radius=14,
             border=ft.border.all(1, BORDER_COLOR),
             content=ft.Stack(
-                # IMPORTANTE: contenido primero, menu después (menu pequeño y posicionado)
                 controls=[
                     tarjeta_contenido,
-                    menu
+                    ft.Container(  # 👈 ahora sí lo posicionamos aquí
+                        content=menu,
+                        top=5,
+                        right=5,
+                    ),
                 ]
             )
         )
@@ -352,8 +341,10 @@ def pantalla_inicio(page: ft.Page, cambiar_pantalla):
                         shape=ft.RoundedRectangleBorder(radius=20),
                         padding=ft.padding.symmetric(horizontal=25),
                         text_style=ft.TextStyle(size=13, weight=ft.FontWeight.W_500),
-                    )
+                    ),
+                    on_click=lambda e: cambiar_pantalla("registro", origen="inicio")
                 ),
+
                 ft.TextButton(
                     text="Ingresar a mi cuenta",
                     style=ft.ButtonStyle(
@@ -361,6 +352,7 @@ def pantalla_inicio(page: ft.Page, cambiar_pantalla):
                         overlay_color=ft.Colors.GREY_200,
                         text_style=ft.TextStyle(size=13, weight=ft.FontWeight.W_500),
                     ),
+                    on_click=lambda e: cambiar_pantalla("login")
                 ),
             ],
             spacing=12,

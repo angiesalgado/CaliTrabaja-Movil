@@ -3,7 +3,8 @@ from flet import Icons
 from app.components.ModalReporte import ModalReporte
 from app.components.nav_bar import nav_bar
 from app.components.menu_inferior import menu_inferior
-
+from app.components.ModalTarjetaCompleta import ModalTarjetaCompleta
+from app.components.MenuTarjetasOpciones import menu_opciones
 
 def custom_expansion(page, title, controls_list):
     toggle_icon = ft.Icon(name=ft.Icons.KEYBOARD_ARROW_DOWN, color="#3EAEB1")
@@ -76,6 +77,15 @@ def publicaciones(page: ft.Page, cambiar_pantalla):
     modal_reporte = ModalReporte()
     page.overlay.append(modal_reporte.dialog)
 
+    modal_detalle = ModalTarjetaCompleta()
+    page.overlay.append(modal_detalle.dialog)
+
+    def abrir_modal_detalle(nombre, profesion, descripcion, costo, calificacion):
+        print("CLICK -> abrir_modal_detalle:", nombre)  # <-- mira la consola donde corres Flet
+        modal_detalle.set_content(nombre, profesion, descripcion, costo, calificacion)
+        page.dialog = modal_detalle.dialog
+        modal_detalle.dialog.open = True
+        page.update()
 
     # 🔹 Overlay oscuro (para cerrar al hacer clic afuera)
     overlay = ft.Container(
@@ -307,102 +317,82 @@ def publicaciones(page: ft.Page, cambiar_pantalla):
     # ---------------- FUNCIÓN TARJETAS ----------------
     def tarjeta_horizontal(nombre, profesion, descripcion, costo, calificacion=4):
         mostrar_boton = len(descripcion) > 70
+
         stars = ft.Row(
-            [
-                ft.Icon(ft.Icons.STAR if i < calificacion else ft.Icons.STAR_BORDER,
-                        color=PRIMARY_COLOR, size=14)
-                for i in range(5)
-            ],
+            [ft.Icon(ft.Icons.STAR if i < calificacion else ft.Icons.STAR_BORDER,
+                     color=PRIMARY_COLOR, size=14) for i in range(5)],
             spacing=0,
             alignment=ft.MainAxisAlignment.CENTER
         )
 
-        menu = ft.Container(
-            content=ft.PopupMenuButton(
-                icon=ft.Icons.MORE_HORIZ,
-                icon_color=TEXT_COLOR,
-                items=[
-                    ft.PopupMenuItem(
-                        content=ft.Row([ft.Icon(ft.Icons.BOOKMARK_BORDER, size=14, color=TEXT_COLOR),
-                                        ft.Text("Guardar", color=TEXT_COLOR)], spacing=6)
-                    ),
-                    ft.PopupMenuItem(
-                        content=ft.Row([ft.Icon(Icons.ERROR_OUTLINE, size=16, color=TEXT_COLOR),
-                                        ft.Text("Reportar", color=TEXT_COLOR)], spacing=8),
-                        on_click=lambda e: modal_reporte.show(page),
-                    ),
-                ]
-            ),
-            alignment=ft.alignment.top_right,
-            padding=0,
-            margin=ft.Margin(0, -10, -10, 0)
-        )
+        # Menú con Guardar + Reportar
+        menu = menu_opciones(page, modal_reporte, text_color=TEXT_COLOR, incluir_guardar=True)
 
-        def mostrar_detalle(e):
-            page.dialog = ft.AlertDialog(
-                title=ft.Text("Descripción completa", weight=ft.FontWeight.BOLD),
-                content=ft.Text(descripcion),
-                actions=[ft.TextButton("Cerrar", on_click=lambda e: setattr(page.dialog, "open", False))]
+        # Contenido principal
+        tarjeta_contenido = ft.Container(
+            padding=ft.padding.only(top=10),
+            content=ft.Column(
+                [
+                    ft.CircleAvatar(radius=30, bgcolor=ft.Colors.GREY_300),
+                    ft.Text(f"COP {costo}/h", size=11, color=TEXT_COLOR, text_align=ft.TextAlign.CENTER),
+                    ft.Container(height=8),
+                    ft.Text(nombre, weight=ft.FontWeight.BOLD, size=17, color=TEXT_COLOR,
+                            text_align=ft.TextAlign.CENTER),
+                    stars,
+                    ft.Text(profesion, size=14, weight=ft.FontWeight.W_500, color=TEXT_COLOR,
+                            text_align=ft.TextAlign.CENTER),
+                    ft.Text("Descripción:", size=12, color=ft.Colors.BLACK54, text_align=ft.TextAlign.CENTER),
+
+                    ft.Container(
+                        content=ft.Text(
+                            descripcion,
+                            size=11,
+                            max_lines=2,
+                            overflow=ft.TextOverflow.ELLIPSIS,
+                            color=TEXT_COLOR,
+                            text_align=ft.TextAlign.CENTER
+                        ),
+                        height=32,
+                        alignment=ft.alignment.center
+                    ),
+
+                    # Botón Ver más con cursor y on_click
+                    ft.Container(
+                        content=ft.TextButton(
+                            "Ver más" if mostrar_boton else "",
+                            on_click=(lambda e: abrir_modal_detalle(nombre, profesion, descripcion, costo,
+                                                                    calificacion)) if mostrar_boton else None,
+                            style=ft.ButtonStyle(
+                                color=PRIMARY_COLOR if mostrar_boton else "transparent",
+                                padding=0,
+                                text_style=ft.TextStyle(size=11)
+                            )
+                        ),
+                        margin=ft.margin.only(top=-3)  # 🔹 lo sube 6px
+                    )
+
+                ],
+                alignment=ft.MainAxisAlignment.CENTER,
+                horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                spacing=3
             )
-            page.dialog.open = True
-            page.update()
+        )
 
         return ft.Container(
             width=180,
-            height=250,
+            height=270,
             padding=8,
             bgcolor="white",
             border_radius=14,
             border=ft.border.all(1, BORDER_COLOR),
             content=ft.Stack(
                 controls=[
-                    # 🔹 Movemos todo hacia abajo
-                    ft.Container(
-                        padding=ft.padding.only(top=10),
-                        content=ft.Column(
-                            [
-                                ft.CircleAvatar(radius=30, bgcolor=ft.Colors.GREY_300),
-                                ft.Text(f"COP {costo}/h", size=11, color=TEXT_COLOR, text_align=ft.TextAlign.CENTER),
-                                ft.Container(height=10),
-                                ft.Text(nombre, weight=ft.FontWeight.BOLD, size=17, color=TEXT_COLOR,
-                                        text_align=ft.TextAlign.CENTER),
-                                stars,
-                                ft.Text(profesion, size=14, weight=ft.FontWeight.W_500, color=TEXT_COLOR,
-                                        text_align=ft.TextAlign.CENTER),
-                                ft.Text("Descripción:", size=12, color=ft.Colors.BLACK54,
-                                        text_align=ft.TextAlign.CENTER),
-
-                                # 🔹 CONTENEDOR FIJO PARA DESCRIPCIÓN (2 líneas)
-                                ft.Container(
-                                    content=ft.Text(
-                                        descripcion,
-                                        size=11,
-                                        max_lines=2,
-                                        overflow=ft.TextOverflow.ELLIPSIS,
-                                        color=TEXT_COLOR,
-                                        text_align=ft.TextAlign.CENTER
-                                    ),
-                                    height=32,  # espacio reservado
-                                    alignment=ft.alignment.center
-                                ),
-
-                                # 🔹 Botón SIEMPRE presente
-                                ft.TextButton(
-                                    "Ver más" if mostrar_boton else " ",
-                                    on_click=mostrar_detalle if mostrar_boton else None,
-                                    style=ft.ButtonStyle(
-                                        color=PRIMARY_COLOR if mostrar_boton else "transparent",
-                                        padding=0,
-                                        text_style=ft.TextStyle(size=11)
-                                    )
-                                )
-                            ],
-                            alignment=ft.MainAxisAlignment.CENTER,
-                            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-                            spacing=0  # 🔹 menos espacio entre descripción y botón
-                        )
+                    tarjeta_contenido,
+                    ft.Container(  # 👈 ahora sí lo posicionamos aquí
+                        content=menu,
+                        top=5,
+                        right=5,
                     ),
-                    menu
                 ]
             )
         )

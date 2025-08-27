@@ -2,7 +2,7 @@ import flet as ft
 import re
 from app.components.nav_bar import nav_bar
 
-def registro(page: ft.Page, cambiar_pantalla):
+def pantalla_registro(page: ft.Page, cambiar_pantalla, origen=None):
     page.title = "Registrarse"
     page.scroll = "adaptive"
     max_content_width = 600
@@ -84,7 +84,7 @@ def registro(page: ft.Page, cambiar_pantalla):
                     page,
                     page_width,
                     show_back=True,
-                    on_back_click=lambda e: cambiar_pantalla("login")
+                    on_back_click=lambda e: cambiar_pantalla(origen if origen else "login")
                 ),
 
                 ft.Container(

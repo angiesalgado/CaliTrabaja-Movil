@@ -1,6 +1,7 @@
 import flet as ft
 from app.components.menu_inferior import menu_inferior
-from app.components.ModalReporte import ModalReporte   #  Importamos tu modal
+from app.components.ModalReporte import ModalReporte
+from app.components.MenuTarjetasOpciones import menu_opciones
 
 
 # ---------- NAV SUPERIOR ----------
@@ -65,31 +66,9 @@ def render_guardados(page: ft.Page, cambiar_pantalla=None):
         if len(descripcion) > 300:
             descripcion = descripcion[:300] + "..."
 
-        menu = ft.Container(
-            content=ft.PopupMenuButton(
-                icon=ft.Icons.MORE_HORIZ,
-                icon_color="black",
-                items=[
-                    ft.PopupMenuItem(
-                        content=ft.Container(
-                            width=50,  # 🔹 Controla el ancho del menú
-                            content=ft.Row(
-                                [
-                                    ft.Icon(ft.Icons.ERROR_OUTLINE, size=18, color="black"),
-                                    ft.Text("Reportar", size=14, weight="bold", color="black"),
-                                ],
-                                spacing=6,
-                                alignment="start",
-                            ),
-                            padding=ft.padding.symmetric(horizontal=8, vertical=6),
-                        ),
-                        on_click=lambda e: modal_reporte.show(e.page),
-                    )
-                ],
-            ),
-            alignment=ft.alignment.top_right,
-            padding=0,
-            margin=ft.margin.only(right=-10, top=10),
+        # Menú solo con Reportar (sin opción Guardar)
+        menu_solo_reportar = menu_opciones(
+            page, modal_reporte, text_color="black", incluir_guardar=False
         )
 
         return ft.Container(
@@ -102,12 +81,29 @@ def render_guardados(page: ft.Page, cambiar_pantalla=None):
                                 [
                                     ft.Row(
                                         [
-                                            ft.Text(nombre, size=18, weight="bold", color="teal"),
-                                            menu,   #  Botón de menú
+                                            ft.Text(
+                                                nombre,
+                                                size=18,
+                                                weight="bold",
+                                                color="teal"
+                                            ),
+                                            ft.Row(
+                                                [
+                                                    menu_solo_reportar,  # Menú de opciones
+                                                    ft.IconButton(
+                                                        icon=ft.Icons.DELETE_OUTLINE,  # Icono de bote de basura
+                                                        icon_color="#3EAEB1",
+                                                        icon_size=24,
+                                                        on_click=lambda e: None  # solo visual
+                                                    ),
+                                                ],
+                                                spacing=8,
+                                            ),
                                         ],
                                         alignment="spaceBetween",
                                         expand=True,
                                     ),
+
                                     ft.Row(
                                         [
                                             ft.Text(categoria, size=14, color="black", weight="bold"),

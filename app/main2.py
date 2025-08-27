@@ -13,7 +13,7 @@ from app.views.mensajes import pantalla_mensajes
 from app.views.Guardados import render_guardados
 from app.views.publicaciones import publicaciones
 from app.views.inicio_sesion import inicio_sesion
-from app.views.registrarse import registro
+from app.views.registrarse import pantalla_registro
 
 def main(page: ft.Page):
     page.title = "Mi App"
@@ -33,10 +33,10 @@ def main(page: ft.Page):
     page.theme = ft.Theme(font_family="OswaldRegular")
 
     #  Función para cambiar entre pantallas
-    def cambiar_pantalla(destino: str):
+    def cambiar_pantalla(destino: str, origen=None):
         page.controls.clear()
         page.bottom_appbar = None
-        page.overlay.clear()  #  Limpiamos overlays (menús flotantes)
+        page.overlay.clear()
         page.update()
 
         if destino == "inicio":
@@ -47,18 +47,18 @@ def main(page: ft.Page):
             pantalla_mensajes(page, cambiar_pantalla)
         elif destino == "categorias":
             pantalla_categorias(page, cambiar_pantalla)
-        elif destino == "guardados":  #  Ahora está bien conectado
+        elif destino == "guardados":
             render_guardados(page, cambiar_pantalla)
         elif destino == "publicaciones":
             publicaciones(page, cambiar_pantalla)
         elif destino == "login":
             inicio_sesion(page, cambiar_pantalla)
         elif destino == "registro":
-            registro(page, cambiar_pantalla)
+            pantalla_registro(page, cambiar_pantalla, origen=origen)
 
     #  Pantalla inicial por defecto
     pantalla_inicio(page, cambiar_pantalla)
 
 
 if __name__ == "__main__":
-    ft.app(target=main, view=ft.AppView.WEB_BROWSER, host="0.0.0.0",port = 8551)
+    ft.app(target=main, view=ft.AppView.WEB_BROWSER)
