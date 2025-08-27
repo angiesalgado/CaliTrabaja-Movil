@@ -2,18 +2,9 @@ import flet as ft
 from app.components.menu_inferior import menu_inferior
 
 # ---------- NAV SUPERIOR DE CONFIGURACIÓN ----------
-def nav_configuracion(page: ft.Page, page_width: float, titulo="Configuración", cambiar_pantalla=None):
+def nav_configuracion(page: ft.Page, page_width: float, titulo="Configuración", volver_callback=None):
     text_size = 24 if page_width < 400 else 28
     icon_size = 50
-
-    def volver_menu(e):
-        print("DEBUG: clic en flecha atrás")
-        if cambiar_pantalla:
-            print("DEBUG: usando cambiar_pantalla('menu')")
-            cambiar_pantalla("menu")
-        else:
-            print("DEBUG: usando page.go('/menu')")
-            page.go("/menu")
 
     return ft.SafeArea(
         top=True,
@@ -33,7 +24,7 @@ def nav_configuracion(page: ft.Page, page_width: float, titulo="Configuración",
                         icon=ft.Icons.CHEVRON_LEFT,
                         icon_color="#3EAEB1",
                         icon_size=icon_size,
-                        on_click=volver_menu
+                        on_click=volver_callback  # 🔹 Ahora usa el callback que le pasemos
                     ),
                     ft.Text(
                         titulo,
@@ -54,7 +45,6 @@ def pantalla_configuracion(page: ft.Page, cambiar_pantalla=None):
     usuario_rol = "Cliente"
     usuario_fecha_union = "12/08/2024"
 
-    # Ajustes base de página
     page.controls.clear()
     page.bottom_appbar = None
     page.bgcolor = "#FFFFFF"
@@ -87,17 +77,17 @@ def pantalla_configuracion(page: ft.Page, cambiar_pantalla=None):
         field.suffix = toggle_btn
         return field
 
-    # ---------- NAV INFERIOR (usa cambiar_pantalla) ----------
+    # ---------- NAV INFERIOR ----------
     def on_bottom_nav_click(index):
-        if index == 0:  # Inicio
+        if index == 0:
             cambiar_pantalla("inicio")
-        elif index == 1:  # Categorias
+        elif index == 1:
             cambiar_pantalla("categorias")
-        elif index == 2:  # Mensajes
+        elif index == 2:
             cambiar_pantalla("mensajes")
-        elif index == 3:  # Guardados
+        elif index == 3:
             cambiar_pantalla("guardados")
-        elif index == 4:  # Menú
+        elif index == 4:
             cambiar_pantalla("menu")
 
     # ---------- SUBVISTAS ----------
@@ -110,9 +100,11 @@ def pantalla_configuracion(page: ft.Page, cambiar_pantalla=None):
 
         page.add(
             ft.Column(
+                expand=True,
                 controls=[
-
+                    nav_configuracion(page, page.width, "Cambiar contraseña", volver_callback=lambda e: mostrar_configuracion()),  # 🔹 vuelve a Configuración
                     ft.Container(
+                        expand=True,
                         width=float("inf"),
                         bgcolor="#FFFFFF",
                         padding=ft.padding.symmetric(horizontal=20, vertical=30),
@@ -122,7 +114,6 @@ def pantalla_configuracion(page: ft.Page, cambiar_pantalla=None):
                                 ft.CrossAxisAlignment.START if page.width < 500 else ft.CrossAxisAlignment.CENTER
                             ),
                             controls=[
-                                ft.Text("Cambiar contraseña", size=22, weight=ft.FontWeight.BOLD, color="#3EAEB1"),
                                 ft.Text("Contraseña actual", size=16, weight=ft.FontWeight.BOLD, color="#000000"),
                                 actual_field,
                                 ft.Text("Nueva contraseña", size=16, weight=ft.FontWeight.BOLD, color="#000000"),
@@ -165,9 +156,11 @@ def pantalla_configuracion(page: ft.Page, cambiar_pantalla=None):
 
         page.add(
             ft.Column(
+                expand=True,
                 controls=[
-
+                    nav_configuracion(page, page.width, "Eliminar cuenta", volver_callback=lambda e: mostrar_configuracion()),  # 🔹 vuelve a Configuración
                     ft.Container(
+                        expand=True,
                         width=float("inf"),
                         bgcolor="#FFFFFF",
                         padding=ft.padding.symmetric(horizontal=20, vertical=30),
@@ -177,7 +170,6 @@ def pantalla_configuracion(page: ft.Page, cambiar_pantalla=None):
                                 ft.CrossAxisAlignment.START if page.width < 500 else ft.CrossAxisAlignment.CENTER
                             ),
                             controls=[
-                                ft.Text("Deshabilitar cuenta", size=22, weight=ft.FontWeight.BOLD, color="#3EAEB1"),
                                 ft.Text(
                                     "Esta acción es permanente y no se puede deshacer.\n"
                                     "Toda tu información se eliminará de forma irreversible.\n"
@@ -195,7 +187,7 @@ def pantalla_configuracion(page: ft.Page, cambiar_pantalla=None):
                                             "Deshabilitar cuenta",
                                             bgcolor="#3EAEB1",
                                             color="white",
-                                            width=150,
+                                            width=170,
                                             style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=20)),
                                         ),
                                         ft.ElevatedButton(
@@ -220,8 +212,7 @@ def pantalla_configuracion(page: ft.Page, cambiar_pantalla=None):
     def mostrar_configuracion():
         page.controls.clear()
 
-        # Barra superior con flecha que vuelve al MENÚ
-        header = nav_configuracion(page, page.width, "Configuración", cambiar_pantalla)
+        header = nav_configuracion(page, page.width, "Configuración", volver_callback=lambda e: cambiar_pantalla("menu"))
 
         contenido = ft.Container(
             expand=True,
@@ -285,7 +276,6 @@ def pantalla_configuracion(page: ft.Page, cambiar_pantalla=None):
             )
         )
 
-        # Layout principal
         page.add(
             ft.Column(
                 expand=True,
@@ -299,10 +289,9 @@ def pantalla_configuracion(page: ft.Page, cambiar_pantalla=None):
             )
         )
 
-
         page.bottom_appbar = ft.BottomAppBar(
             content=menu_inferior(
-                selected_index=4,                # resalta "Menú" como activo
+                selected_index=4,
                 on_bottom_nav_click=on_bottom_nav_click
             ),
             bgcolor=ft.Colors.WHITE,
