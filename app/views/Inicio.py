@@ -51,6 +51,8 @@ def pantalla_inicio(page: ft.Page, cambiar_pantalla):
         page.width,
         show_back=False,  # 👉 en Inicio NO aparece la flecha
         show_explora=False,  # 👉 en Inicio NO aparece "Explora en"
+        show_login_button=True,  # 👉 solo en Inicio aparece el botón
+        on_login_click=lambda e: cambiar_pantalla("login")  # 👈 acción del botón
     )
 
     # ---------------- FRASES CAMBIANTES + BOTÓN INICIO SESIÓN ----------------
@@ -83,29 +85,7 @@ def pantalla_inicio(page: ft.Page, cambiar_pantalla):
         bgcolor="#D9D9D9",
         border_radius=ft.border_radius.all(2),
         margin=ft.margin.symmetric(horizontal=10, vertical=5),
-        padding=10
-    )
-
-    boton_inicio_sesion = ft.Container(
-        content=ft.ElevatedButton(
-            text="Iniciar sesión",
-            bgcolor=PRIMARY_COLOR,
-            color=ft.Colors.WHITE,
-            height=30,
-            style=ft.ButtonStyle(
-                shape=ft.RoundedRectangleBorder(radius=20),
-                padding=ft.padding.symmetric(horizontal=15)
-            ),
-            on_click=lambda e: cambiar_pantalla("login")
-        ),
-        alignment=ft.alignment.top_right,
-        padding=ft.padding.only(right=15, top=3)
-    )
-
-    stack_header = ft.Stack(
-        controls=[contenedor_frase, boton_inicio_sesion],
-        width=page.width,
-        height=95
+        padding=14
     )
 
     async def cambiar_frase():
@@ -405,12 +385,20 @@ def pantalla_inicio(page: ft.Page, cambiar_pantalla):
     layout = ft.Column(
         controls=[
             nav,
-            stack_header,
-            categorias_titulo,
-            categorias_container,
-            publicaciones_container,
-            crear_cuenta_container,
-            destacados_container
+            ft.Container(
+                content=ft.Column(
+                    controls=[
+                        contenedor_frase,
+                        categorias_titulo,
+                        categorias_container,
+                        publicaciones_container,
+                        crear_cuenta_container,
+                        destacados_container
+                    ],
+                    spacing=10  # 👈 separa entre secciones
+                ),
+                padding=ft.padding.only(top=15)  # 👈 agrega espacio entre nav y el resto
+            )
         ],
         expand=True,
         scroll=ft.ScrollMode.ADAPTIVE
