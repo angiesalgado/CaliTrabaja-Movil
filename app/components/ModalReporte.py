@@ -1,23 +1,22 @@
 import flet as ft
 
 class ModalReporte:
-    def __init__(self, on_guardar=None, on_cancelar=None):
+    def __init__(self, on_guardar=None, on_cancelar=None, alto_texto=150):
         self.on_guardar = on_guardar
         self.on_cancelar = on_cancelar
 
-        # 📝 Campo de texto estilizado
+        # 🔹 TextField dentro de un Container para fijar altura
         self.descripcion = ft.TextField(
             multiline=True,
+            min_lines=6,
+            max_lines=6,
             hint_text="Añade una descripción del problema",
-            height=60,
-
-            # 🔹 Estilos visuales
-            border="none",  # Sin bordes
+            border="none",
             filled=True,
-            fill_color="#D9D9D9",  # Fondo gris
+            fill_color="#D9D9D9",
             border_radius=10,
 
-            # 🔹 Estilo del texto escrito por el usuario
+            # 🔹 Estilo del texto escrito
             text_style=ft.TextStyle(
                 font_family="Oswald",
                 size=14,
@@ -28,21 +27,20 @@ class ModalReporte:
             hint_style=ft.TextStyle(
                 font_family="Oswald",
                 size=14,
-                weight=ft.FontWeight.W_500,  # Medium
+                weight=ft.FontWeight.W_500,
                 color="#808080",
             ),
-        # 🔹 Para que arranque grande y pueda crecer
-        min_lines = 4,  # tamaño inicial (como 4 renglones)
-        max_lines = None,  # que crezca indefinidamente
+
         )
 
-        # 📦 Diálogo principal
+
         self.dialog = ft.AlertDialog(
             modal=True,
-            bgcolor="#FFFFFF",  # 🔹 Fondo blanco del modal
+            bgcolor="#FFFFFF",
             content=ft.Container(
                 width=380,
-                padding=20,
+                height=260,
+
                 bgcolor="#FFFFFF",
                 border_radius=20,
                 content=ft.Column(
@@ -63,31 +61,29 @@ class ModalReporte:
                                     bgcolor="#3EAEB1",
                                     color=ft.Colors.WHITE,
                                     on_click=self.guardar,
+                                    width=110,
                                     style=ft.ButtonStyle(
                                         shape=ft.RoundedRectangleBorder(radius=20),
-                                        padding=ft.padding.symmetric(horizontal=30, vertical=12),
-                                        # 🔹 Más ancho, menos alto
                                     )
                                 ),
                                 ft.OutlinedButton(
                                     "Cancelar",
                                     on_click=self.cancelar,
+                                    width=110,
                                     style=ft.ButtonStyle(
                                         shape=ft.RoundedRectangleBorder(radius=20),
-                                        padding=ft.padding.symmetric(horizontal=30, vertical=12),
-                                        # 🔹 Igual tamaño que Guardar
-                                        side=ft.BorderSide(1, "#000000"),  # 🔹 Borde negro
-                                        color="#000000"
+                                        bgcolor="#F2F2F2",
+                                        color="black",
                                     )
                                 ),
                             ],
                             alignment=ft.MainAxisAlignment.CENTER,
-                            spacing=20
+                            spacing=15
                         )
                     ],
                     tight=True,
                     horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-                    spacing=35  # 🔹 separación uniforme entre título, campo y botones
+                    spacing=20
                 )
             ),
             actions_alignment=ft.MainAxisAlignment.END,
@@ -95,7 +91,8 @@ class ModalReporte:
 
     def guardar(self, e):
         if self.on_guardar:
-            self.on_guardar(self.descripcion.value)
+
+            self.on_guardar(self.descripcion.content.value)
         self.dialog.open = False
         e.page.update()
 
