@@ -1,4 +1,3 @@
-# login_view.py
 import flet as ft
 import re
 from app.components.nav_bar import nav_bar
@@ -11,7 +10,7 @@ def inicio_sesion(page: ft.Page, cambiar_pantalla):
     # Campo de correo electrónico
     email_field = ft.TextField(
         label="Correo electrónico",
-        label_style=ft.TextStyle(font_family="OswaldBold", size=16),
+        label_style=ft.TextStyle(font_family="OswaldBold", size=16, weight="bold"),
         border=ft.InputBorder.NONE,
         filled=True,
         bgcolor="#D9D9D9",
@@ -21,7 +20,7 @@ def inicio_sesion(page: ft.Page, cambiar_pantalla):
     # Campo de contraseña
     password_field = ft.TextField(
         label="Contraseña",
-        label_style=ft.TextStyle(font_family="OswaldBold", size=16),
+        label_style=ft.TextStyle(font_family="OswaldBold", size=16, weight="bold"),
         password=True,
         can_reveal_password=True,
         border=ft.InputBorder.NONE,
@@ -29,6 +28,7 @@ def inicio_sesion(page: ft.Page, cambiar_pantalla):
         bgcolor="#D9D9D9",
         expand=True
     )
+
     message_text = ft.Text("", size=14, color="red")
 
     def validar_email(email):
@@ -59,13 +59,7 @@ def inicio_sesion(page: ft.Page, cambiar_pantalla):
         page.update()
 
     def olvidar_contrasena(e):
-        page.dialog = ft.AlertDialog(
-            title=ft.Text("Recuperar contraseña"),
-            content=ft.Text("Aquí iría el proceso para recuperar la contraseña."),
-            actions=[ft.TextButton("Cerrar", on_click=lambda e: page.dialog.close())]
-        )
-        page.dialog.open = True
-        page.update()
+        cambiar_pantalla("recuperar")
 
     def crear_cuenta(e):
         cambiar_pantalla("registro")
@@ -76,7 +70,6 @@ def inicio_sesion(page: ft.Page, cambiar_pantalla):
             spacing=0,
             horizontal_alignment=ft.CrossAxisAlignment.CENTER,
             controls=[
-                # ---------------- NAV SUPERIOR ----------------
                 nav_bar(
                     page,
                     page_width,
@@ -96,7 +89,8 @@ def inicio_sesion(page: ft.Page, cambiar_pantalla):
                                 padding=ft.padding.only(top=40),
                                 content=ft.Text(
                                     "Iniciar sesión",
-                                    size=28,
+                                    size=32,
+                                    weight="bold",
                                     color="#3EAEB1",
                                     font_family="OswaldBold"
                                 )
@@ -107,7 +101,13 @@ def inicio_sesion(page: ft.Page, cambiar_pantalla):
                                 padding=5,
                                 content=ft.Row(
                                     vertical_alignment=ft.CrossAxisAlignment.CENTER,
-                                    controls=[ft.Icon(name="alternate_email", color="#3EAEB1"), email_field]
+                                    controls=[
+                                        ft.Container(
+                                            padding=ft.padding.only(left=10),
+                                            content=ft.Icon(name="alternate_email", color="#3EAEB1")
+                                        ),
+                                        email_field
+                                    ]
                                 )
                             ),
                             ft.Container(
@@ -116,25 +116,59 @@ def inicio_sesion(page: ft.Page, cambiar_pantalla):
                                 padding=5,
                                 content=ft.Row(
                                     vertical_alignment=ft.CrossAxisAlignment.CENTER,
-                                    controls=[ft.Icon(name="lock", color="#3EAEB1"), password_field]
+                                    controls=[
+                                        ft.Container(
+                                            padding=ft.padding.only(left=10),
+                                            content=ft.Icon(name="lock", color="#3EAEB1")
+                                        ),
+                                        password_field
+                                    ]
                                 )
                             ),
                             message_text,
                             ft.Container(
                                 padding=ft.padding.only(top=20),
                                 content=ft.ElevatedButton(
-                                    content=ft.Text("Iniciar sesión", size=20, color="black", font_family="OswaldMedium"),
-                                    width=160,
-                                    style=ft.ButtonStyle(bgcolor="#D9D9D9", shape=ft.RoundedRectangleBorder(radius=8)),
+                                    content=ft.Text(
+                                        "Iniciar sesión",
+                                        size=20,
+                                        color="black",
+                                        font_family="OswaldBold",
+                                        weight="bold"
+                                    ),
+                                    width=180,
+                                    style=ft.ButtonStyle(
+                                        bgcolor="#D9D9D9",
+                                        shape=ft.RoundedRectangleBorder(radius=8)
+                                    ),
                                     on_click=iniciar_sesion
                                 )
                             ),
-                            ft.TextButton("¿Olvidaste tu contraseña?", on_click=olvidar_contrasena),
-                            ft.TextButton(
-                                "Crear una cuenta",
-                                on_click=crear_cuenta,
-                                style=ft.ButtonStyle(text_style=ft.TextStyle(font_family="OswaldMedium"))
-                            )
+                            ft.Column(
+                                spacing=4,  # Puedes ajustar a 0 si quieres que estén aún más pegados
+                                horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                                controls=[
+                                    ft.TextButton(
+                                        content=ft.Text(
+                                            "¿Olvidaste tu contraseña?",
+                                            color="black",
+                                            font_family="OswaldBold",
+                                            weight="bold"
+                                        ),
+                                        on_click=olvidar_contrasena
+                                    ),
+                                    ft.TextButton(
+                                        content=ft.Text(
+                                            "Crear una cuenta",
+                                            color="black",
+                                            font_family="OswaldBold",
+                                            weight="bold"
+                                        ),
+                                        on_click=crear_cuenta
+                                    )
+                                ]
+                            ),
+
                         ]
                     )
                 )
