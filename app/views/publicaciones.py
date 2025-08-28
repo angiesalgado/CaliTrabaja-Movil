@@ -421,27 +421,7 @@ def publicaciones(page: ft.Page, cambiar_pantalla):
         )
         filas.append(fila)
 
-        # ---------- Navegación inferior ----------
-
-    def on_bottom_nav_click(index):
-        if index == 0:  # Inicio
-            cambiar_pantalla("inicio")
-        elif index == 1:  # Categorias
-            cambiar_pantalla("categorias")
-        elif index == 2:  # Mensajes
-            cambiar_pantalla("mensajes")
-        elif index == 3:  # Guardados
-            cambiar_pantalla("guardados")
-        elif index == 4:  # Menú
-            cambiar_pantalla("menu")
-
-        # Barra inferior
-
-    page.bottom_appbar = ft.BottomAppBar(
-        content=menu_inferior(selected_index=4, on_bottom_nav_click=on_bottom_nav_click),
-        bgcolor=ft.Colors.WHITE,
-    )
-
+        # ---------------- NAV SUPERIOR + CONTENIDO ----------------
     # ---------------- NAV SUPERIOR + CONTENIDO ----------------
     layout = ft.Column(
         [
@@ -472,7 +452,9 @@ def publicaciones(page: ft.Page, cambiar_pantalla):
         expand=True
     )
 
-
+    # ---------------- MENÚ INFERIOR ----------------
+    bottom_bar_container = menu_inferior(4, lambda idx: cambiar_pantalla("publicaciones") if idx == 1 else None)
+    page.bottom_appbar = ft.BottomAppBar(content=bottom_bar_container, bgcolor=ft.Colors.WHITE, elevation=0)
 
     page.add(layout)
     page.update()

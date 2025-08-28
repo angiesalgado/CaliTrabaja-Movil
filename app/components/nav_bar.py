@@ -63,17 +63,20 @@ def nav_bar(page, page_width: float,
             ],
         )
 
-    # ----------- Ícono de login (círculo de usuario) -----------
-    login_icon = ft.Container(
-        content=ft.IconButton(
-            icon=ft.Icons.ACCOUNT_CIRCLE_OUTLINED,
-            icon_color="#3EAEB1",
-            icon_size=40,
-            on_click=lambda e: page.go("/login"),  # Redirige a /login
-            tooltip="Iniciar sesión",
+    # ----------- Botón sobresalido -----------
+    login_button = ft.Container(
+        content=ft.ElevatedButton(
+            "Iniciar sesión",
+            bgcolor="#3EAEB1",
+            color="white",
+            style=ft.ButtonStyle(
+                shape=ft.RoundedRectangleBorder(radius=20),
+            ),
+            on_click=on_login_click,
         ),
-        padding=ft.padding.only(right=10),
-    ) if show_login_button else None
+        right=10,
+        bottom=-52,
+    ) if show_login_button else None   # 👈 solo si lo piden
 
     # ----------- Layout con Stack -----------
     stack_controls = [
@@ -88,13 +91,8 @@ def nav_bar(page, page_width: float,
         )
     ]
 
-    if login_icon:
-        stack_controls.append(
-            ft.Row(
-                alignment=ft.MainAxisAlignment.END,
-                controls=[login_icon],
-            )
-        )
+    if login_button:
+        stack_controls.append(login_button)
 
     return ft.Container(
         width=float("inf"),

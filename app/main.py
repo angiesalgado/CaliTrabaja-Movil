@@ -14,7 +14,6 @@ from app.views.Guardados import render_guardados
 from app.views.publicaciones import publicaciones
 from app.views.inicio_sesion import inicio_sesion
 from app.views.registrarse import pantalla_registro
-from app.views.recuperar_contrasena import recuperar_contrasena
 
 def main(page: ft.Page):
     page.title = "Mi App"
@@ -56,13 +55,10 @@ def main(page: ft.Page):
             inicio_sesion(page, cambiar_pantalla)
         elif destino == "registro":
             pantalla_registro(page, cambiar_pantalla, origen=origen)
-        elif destino == "recuperar":
-            recuperar_contrasena(page, cambiar_pantalla)
-
 
     #  Pantalla inicial por defecto
     pantalla_inicio(page, cambiar_pantalla)
 
 
 if __name__ == "__main__":
-    ft.app(target=main, view=ft.AppView.WEB_BROWSER)
+    ft.app(target=main, view=ft.AppView.WEB_BROWSER,host="0.0.0.0",port=8551)
