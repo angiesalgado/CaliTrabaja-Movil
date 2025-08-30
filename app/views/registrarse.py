@@ -1,7 +1,7 @@
 import flet as ft
 import re
 from app.API_services.registrar_usuario import registrar_usuario_api
-from app.components.nav_bar import nav_bar
+from app.components.nav import nav_bar
 from . import Inicio
 
 def pantalla_registro(page: ft.Page, cambiar_pantalla, origen=None):

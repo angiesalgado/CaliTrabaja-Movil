@@ -5,7 +5,7 @@ from flet import Icons
 from pyexpat.errors import messages
 
 from app.API_services.inicio import inicio_api
-from app.components.nav_bar import nav_bar
+from app.components.nav import nav_bar
 from app.components.menu_inferior import menu_inferior
 from app.components.ModalReporte import ModalReporte
 from app.components.ModalTarjetaCompleta import ModalTarjetaCompleta

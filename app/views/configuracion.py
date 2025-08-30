@@ -138,6 +138,10 @@ def pantalla_configuracion(page: ft.Page, cambiar_pantalla=None):
             nueva = nueva_field.value.strip() if nueva_field.value else None
             repetir = repetir_field.value.strip() if repetir_field.value else None
 
+            if  not contraseña or not nueva or not repetir :
+                print("Debes ingresar la contraseña, nueva y repetir")
+                return
+
             print(f"CONTRASEÑA ACTUAL: {contraseña}, NUEVA CONTRASEÑA: {nueva}, REPETIR CONTRASEÑA: {repetir}")
 
             datos = {}
@@ -222,6 +226,9 @@ def pantalla_configuracion(page: ft.Page, cambiar_pantalla=None):
 
             contraseña = confirmar_field.value.strip() if confirmar_field.value else None
 
+            if  not contraseña :
+                print("Debes ingresar la contraseña")
+                return
 
             print(f"CONTRASEÑA ACTUAL: {contraseña}")
 

@@ -2,7 +2,7 @@
 import flet as ft
 import re
 from . import  Inicio
-from app.components.nav_bar import nav_bar
+from app.components.nav import nav_bar
 from app.API_services.iniciar_sesion import iniciar_sesion_api
 
 
