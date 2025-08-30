@@ -1,5 +1,5 @@
 import flet as ft
-from app.components.nav_bar import nav_bar
+from app.components.nav import nav_bar
 from app.components.menu_inferior import menu_inferior
 
 def pantalla_categorias(page: ft.Page, cambiar_pantalla):
@@ -28,33 +28,37 @@ def pantalla_categorias(page: ft.Page, cambiar_pantalla):
     ]
 
     def crear_categoria(imagen, texto):
-        return ft.Column(
-            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-            spacing=4,
-            controls=[
-                ft.Container(
-                    width=100,
-                    height=100,
-                    bgcolor="#FFFFFF",
-                    border=ft.border.all(1, "#000000"),
-                    border_radius=10,
-                    padding=8,
-                    content=ft.Image(
-                        src=imagen,
-                        width=55,
-                        height=55,
-                        fit=ft.ImageFit.CONTAIN
+        return ft.Container(
+            content=ft.Column(
+                horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                spacing=4,
+                controls=[
+                    ft.Container(
+                        width=100,
+                        height=100,
+                        bgcolor="#FFFFFF",
+                        border=ft.border.all(1, "#000000"),
+                        border_radius=10,
+                        padding=8,
+                        content=ft.Image(
+                            src=imagen,
+                            width=55,
+                            height=55,
+                            fit=ft.ImageFit.CONTAIN
+                        ),
                     ),
-                ),
-                ft.Text(
-                    texto,
-                    size=11,
-                    weight=ft.FontWeight.BOLD,
-                    text_align=ft.TextAlign.CENTER,
-                    max_lines=2,
-                    color="black"
-                )
-            ]
+                    ft.Text(
+                        texto,
+                        size=11,
+                        weight=ft.FontWeight.BOLD,
+                        text_align=ft.TextAlign.CENTER,
+                        max_lines=2,
+                        color="black"
+                    )
+                ]
+            ),
+            # 👉 Al hacer clic en cualquier categoría va a publicaciones con origen=categorias
+            on_click=lambda e: cambiar_pantalla("publicaciones", origen="categorias")
         )
 
     # Agrupar categorías en filas de a 3

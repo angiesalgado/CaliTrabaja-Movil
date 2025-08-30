@@ -1,6 +1,6 @@
 import flet as ft
 from app.components.menu_inferior import menu_inferior
-from app.components.nav_bar import nav_bar
+from app.components.nav import nav_bar
 
 def pantalla_mensajes(page: ft.Page, cambiar_pantalla):
     # Limpiar la página

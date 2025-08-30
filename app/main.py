@@ -2,7 +2,6 @@ import sys
 import os
 import flet as ft
 
-
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 #  Importar vistas
@@ -24,7 +23,6 @@ def main(page: ft.Page):
     page.spacing = 0
     page.window_maximized = True
 
-    #  Configurar fuentes personalizadas
     page.fonts = {
         "OswaldRegular": "assets/fonts/Oswald-Regular.ttf",
         "OswaldMedium": "assets/fonts/Oswald-Medium.ttf",
@@ -50,7 +48,7 @@ def main(page: ft.Page):
         elif destino == "guardados":
             render_guardados(page, cambiar_pantalla)
         elif destino == "publicaciones":
-            publicaciones(page, cambiar_pantalla)
+            publicaciones(page, cambiar_pantalla, origen=origen)
         elif destino == "login":
             inicio_sesion(page, cambiar_pantalla)
         elif destino == "registro":

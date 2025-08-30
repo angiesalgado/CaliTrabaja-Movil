@@ -1,7 +1,7 @@
 # login_view.py
 import flet as ft
 import re
-from app.components.nav_bar import nav_bar
+from app.components.nav import nav_bar
 
 
 def inicio_sesion(page: ft.Page, cambiar_pantalla):
@@ -11,7 +11,7 @@ def inicio_sesion(page: ft.Page, cambiar_pantalla):
     # Campo de correo electrónico
     email_field = ft.TextField(
         label="Correo electrónico",
-        label_style=ft.TextStyle(font_family="OswaldBold", size=16),
+        label_style=ft.TextStyle(font_family="OswaldBold", size=16, weight=ft.FontWeight.BOLD),
         border=ft.InputBorder.NONE,
         filled=True,
         bgcolor="#D9D9D9",
@@ -21,7 +21,7 @@ def inicio_sesion(page: ft.Page, cambiar_pantalla):
     # Campo de contraseña
     password_field = ft.TextField(
         label="Contraseña",
-        label_style=ft.TextStyle(font_family="OswaldBold", size=16),
+        label_style=ft.TextStyle(font_family="OswaldBold", size=16, weight=ft.FontWeight.BOLD),
         password=True,
         can_reveal_password=True,
         border=ft.InputBorder.NONE,
@@ -29,7 +29,7 @@ def inicio_sesion(page: ft.Page, cambiar_pantalla):
         bgcolor="#D9D9D9",
         expand=True
     )
-    message_text = ft.Text("", size=14, color="red")
+    message_text = ft.Text("", size=14, color="red", weight=ft.FontWeight.BOLD)
 
     def validar_email(email):
         return re.match(r"[^@]+@[^@]+\.[^@]+", email)
@@ -48,7 +48,7 @@ def inicio_sesion(page: ft.Page, cambiar_pantalla):
 
     def volver_atras(e):
         page.dialog = ft.AlertDialog(
-            title=ft.Text("Confirmar"),
+            title=ft.Text("Confirmar", weight=ft.FontWeight.BOLD),
             content=ft.Text("¿Quieres salir de la pantalla de inicio de sesión?"),
             actions=[
                 ft.TextButton("Cancelar", on_click=lambda e: page.dialog.close()),
@@ -60,7 +60,7 @@ def inicio_sesion(page: ft.Page, cambiar_pantalla):
 
     def olvidar_contrasena(e):
         page.dialog = ft.AlertDialog(
-            title=ft.Text("Recuperar contraseña"),
+            title=ft.Text("Recuperar contraseña", weight=ft.FontWeight.BOLD),
             content=ft.Text("Aquí iría el proceso para recuperar la contraseña."),
             actions=[ft.TextButton("Cerrar", on_click=lambda e: page.dialog.close())]
         )
@@ -92,48 +92,93 @@ def inicio_sesion(page: ft.Page, cambiar_pantalla):
                         spacing=20,
                         horizontal_alignment=ft.CrossAxisAlignment.CENTER,
                         controls=[
+                            # --- Título ---
                             ft.Container(
-                                padding=ft.padding.only(top=40),
+                                padding=ft.padding.only(top=20),
                                 content=ft.Text(
                                     "Iniciar sesión",
-                                    size=28,
+                                    size=30,
                                     color="#3EAEB1",
-                                    font_family="OswaldBold"
+                                    font_family="OswaldBold",
+                                    weight=ft.FontWeight.BOLD
                                 )
                             ),
+                            # --- Correo ---
                             ft.Container(
                                 bgcolor="#D9D9D9",
                                 border_radius=8,
-                                padding=5,
+                                padding=ft.padding.only(left=12, right=8, top=5, bottom=5),
                                 content=ft.Row(
                                     vertical_alignment=ft.CrossAxisAlignment.CENTER,
-                                    controls=[ft.Icon(name="alternate_email", color="#3EAEB1"), email_field]
+                                    controls=[
+                                        ft.Icon(name="alternate_email", color="#3EAEB1"),
+                                        email_field
+                                    ]
                                 )
                             ),
+                            # --- Contraseña ---
                             ft.Container(
                                 bgcolor="#D9D9D9",
                                 border_radius=8,
-                                padding=5,
+                                padding=ft.padding.only(left=12, right=8, top=5, bottom=5),
                                 content=ft.Row(
                                     vertical_alignment=ft.CrossAxisAlignment.CENTER,
-                                    controls=[ft.Icon(name="lock", color="#3EAEB1"), password_field]
+                                    controls=[
+                                        ft.Icon(name="lock", color="#3EAEB1"),
+                                        password_field
+                                    ]
                                 )
                             ),
                             message_text,
+                            # --- Botón Iniciar sesión ---
                             ft.Container(
-                                padding=ft.padding.only(top=20),
+                                padding=ft.padding.only(top=1),
                                 content=ft.ElevatedButton(
-                                    content=ft.Text("Iniciar sesión", size=20, color="black", font_family="OswaldMedium"),
-                                    width=160,
-                                    style=ft.ButtonStyle(bgcolor="#D9D9D9", shape=ft.RoundedRectangleBorder(radius=8)),
+                                    content=ft.Text(
+                                        "Iniciar sesión",
+                                        size=20,
+                                        color="black",
+                                        font_family="OswaldBold",
+                                        weight=ft.FontWeight.BOLD
+                                    ),
+                                    width=200,
+                                    height=50,
+                                    style=ft.ButtonStyle(
+                                        bgcolor="#D9D9D9",
+                                        shape=ft.RoundedRectangleBorder(radius=8),
+                                    ),
                                     on_click=iniciar_sesion
                                 )
                             ),
-                            ft.TextButton("¿Olvidaste tu contraseña?", on_click=olvidar_contrasena),
-                            ft.TextButton(
-                                "Crear una cuenta",
-                                on_click=crear_cuenta,
-                                style=ft.ButtonStyle(text_style=ft.TextStyle(font_family="OswaldMedium"))
+                            # --- Links debajo (uno debajo del otro) ---
+                            ft.Column(
+                                spacing=5,  # 👈 cerca pero no pegados
+                                alignment=ft.MainAxisAlignment.CENTER,
+                                horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                                controls=[
+                                    ft.TextButton(
+                                        "¿Olvidaste tu contraseña?",
+                                        on_click=olvidar_contrasena,
+                                        style=ft.ButtonStyle(
+                                            color="black",
+                                            text_style=ft.TextStyle(
+                                                font_family="OswaldBold",
+                                                weight=ft.FontWeight.BOLD
+                                            )
+                                        )
+                                    ),
+                                    ft.TextButton(
+                                        "Crear una cuenta",
+                                        on_click=crear_cuenta,
+                                        style=ft.ButtonStyle(
+                                            color="black",
+                                            text_style=ft.TextStyle(
+                                                font_family="OswaldBold",
+                                                weight=ft.FontWeight.BOLD
+                                            )
+                                        )
+                                    )
+                                ]
                             )
                         ]
                     )

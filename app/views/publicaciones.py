@@ -1,7 +1,7 @@
 import flet as ft
 from flet import Icons
 from app.components.ModalReporte import ModalReporte
-from app.components.nav_bar import nav_bar
+from app.components.nav import nav_bar
 from app.components.menu_inferior import menu_inferior
 from app.components.ModalTarjetaCompleta import ModalTarjetaCompleta
 from app.components.MenuTarjetasOpciones import menu_opciones
@@ -57,7 +57,7 @@ def custom_expansion(page, title, controls_list):
 
 
 
-def publicaciones(page: ft.Page, cambiar_pantalla):
+def publicaciones(page: ft.Page, cambiar_pantalla, origen=None):
     # ---------------- CONFIGURACIÓN GENERAL ----------------
     page.fonts = {
         "Oswald": "https://raw.githubusercontent.com/google/fonts/main/ofl/oswald/Oswald%5Bwght%5D.ttf"
@@ -421,7 +421,10 @@ def publicaciones(page: ft.Page, cambiar_pantalla):
         )
         filas.append(fila)
 
-        # ---------------- NAV SUPERIOR + CONTENIDO ----------------
+
+    # Aquí organizamos a que interfaz devuelve dependiendo de dónde vino
+    back_action = lambda e: cambiar_pantalla("categorias") if origen == "categorias" else cambiar_pantalla("menu")
+
     # ---------------- NAV SUPERIOR + CONTENIDO ----------------
     layout = ft.Column(
         [
@@ -430,7 +433,7 @@ def publicaciones(page: ft.Page, cambiar_pantalla):
                 page.width,
                 show_back=True,
                 show_explora=True,
-                on_back_click=lambda e: cambiar_pantalla("menu")
+                on_back_click=back_action
             ),
             ft.Stack(
                 [
@@ -453,8 +456,27 @@ def publicaciones(page: ft.Page, cambiar_pantalla):
     )
 
     # ---------------- MENÚ INFERIOR ----------------
-    bottom_bar_container = menu_inferior(4, lambda idx: cambiar_pantalla("publicaciones") if idx == 1 else None)
-    page.bottom_appbar = ft.BottomAppBar(content=bottom_bar_container, bgcolor=ft.Colors.WHITE, elevation=0)
+    selected_index = 4
+
+    def on_bottom_nav_click(index):
+        if index == 0:  # Inicio
+            cambiar_pantalla("inicio")
+        elif index == 1:  # Categorias
+            cambiar_pantalla("categorias")
+        elif index == 2:  # Mensajes
+            cambiar_pantalla("mensajes")
+        elif index == 3:  # Guardados
+            cambiar_pantalla("guardados")
+        elif index == 4:  # Menú
+            cambiar_pantalla("menu")
+
+    menu = menu_inferior(selected_index, on_bottom_nav_click)
+
+    page.bottom_appbar = ft.BottomAppBar(
+        content=menu,
+        bgcolor=ft.Colors.WHITE,
+        elevation=0,
+    )
 
     page.add(layout)
     page.update()

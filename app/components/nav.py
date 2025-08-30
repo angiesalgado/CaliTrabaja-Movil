@@ -1,10 +1,9 @@
-# app/components/nav_bar.py
 import flet as ft
 
 def nav_bar(page, page_width: float,
             show_back: bool = False,
             show_explora: bool = False,
-            show_login_button: bool = False,   # 👈 nuevo parámetro
+            show_login_icon: bool = False,   # 👈 cambio aquí
             on_back_click=None,
             on_login_click=None):
     text_size = 24 if page_width < 400 else 28
@@ -63,43 +62,30 @@ def nav_bar(page, page_width: float,
             ],
         )
 
-    # ----------- Botón sobresalido -----------
-    login_button = ft.Container(
-        content=ft.ElevatedButton(
-            "Iniciar sesión",
-            bgcolor="#3EAEB1",
-            color="white",
-            style=ft.ButtonStyle(
-                shape=ft.RoundedRectangleBorder(radius=20),
-            ),
+    # ----------- Ícono de login-----------
+    login_icon = ft.Container(
+        content=ft.IconButton(
+            icon=ft.Icons.ACCOUNT_CIRCLE_OUTLINED,   # 👈 el ícono como el de tu imagen
+            icon_size=38,
+            icon_color="#3EAEB1",
             on_click=on_login_click,
+            tooltip="Iniciar sesión"
         ),
-        right=10,
-        bottom=-52,
-    ) if show_login_button else None   # 👈 solo si lo piden
+        padding=ft.padding.only(right=10),
+    ) if show_login_icon else ft.Container(width=48)
 
-    # ----------- Layout con Stack -----------
-    stack_controls = [
-        ft.Row(
+    # ----------- Layout principal -----------
+    return ft.Container(
+        width=float("inf"),
+        bgcolor="#F8F8F8",
+        padding=ft.padding.only(top=30, bottom=20),
+        content=ft.Row(
             alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
             vertical_alignment=ft.CrossAxisAlignment.CENTER,
             controls=[
                 back_button,
                 ft.Container(content=center_content),
-                ft.Container(width=48),
+                login_icon,
             ],
-        )
-    ]
-
-    if login_button:
-        stack_controls.append(login_button)
-
-    return ft.Container(
-        width=float("inf"),
-        bgcolor="#F8F8F8",
-        padding=ft.padding.only(top=30, bottom=40),
-        content=ft.Stack(
-            clip_behavior=ft.ClipBehavior.NONE,
-            controls=stack_controls
         ),
     )
