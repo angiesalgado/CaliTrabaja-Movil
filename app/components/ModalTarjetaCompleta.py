@@ -1,16 +1,16 @@
 import flet as ft
 
 class ModalTarjetaCompleta:
-    def __init__(self):
+    def __init__(self):   # ✅ doble underscore
         self.dialog = ft.AlertDialog(
             modal=True,
-            bgcolor="transparent",   # 🔹 Fondo transparente
-            content=ft.Container(),  # Luego insertamos la tarjeta
+            bgcolor="transparent",
+            content=ft.Container(),
             actions=[]
         )
 
     def set_content(self, nombre, profesion, descripcion, costo, calificacion, page: ft.Page = None):
-        # ⭐ Estrellas
+
         stars = ft.Row(
             [
                 ft.Icon(
@@ -32,21 +32,22 @@ class ModalTarjetaCompleta:
             style=ft.ButtonStyle(padding=0),
         )
 
-        # 🔹 Detectar si es pantalla pequeña (ej: celular)
         es_pantalla_pequena = page and page.width < 480
 
-        # 📌 Tarjeta en sí
         tarjeta_completa = ft.Container(
-            width=380 if not es_pantalla_pequena else  ft.infinity,   # 🔹 más ancha en celular
-            height=380 if not es_pantalla_pequena else 320,
-            padding=ft.padding.only(top=3, left=15, right=15, bottom=10),  # 🔹 ajusta el espacio interno
+            width=380 if not es_pantalla_pequena else ft.infinity,
+            padding=ft.padding.only(top=5, left=15, right=15, bottom=10),
             bgcolor="white",
             border_radius=20,
             content=ft.Column(
                 [
-                    # Fila con botón cerrar
-                    ft.Row([ft.Container(expand=1), cerrar_btn]),
-
+                    ft.Row(
+                        [
+                            ft.Container(expand=1),
+                            cerrar_btn
+                        ],
+                        alignment=ft.MainAxisAlignment.END
+                    ),
                     ft.CircleAvatar(
                         radius=36 if es_pantalla_pequena else 38,
                         bgcolor=ft.Colors.GREY_300
@@ -69,12 +70,7 @@ class ModalTarjetaCompleta:
                         color="black54",
                         text_align=ft.TextAlign.CENTER
                     ),
-
-                    ft.Divider(
-                        height=6 if es_pantalla_pequena else 8,
-                        color="transparent"
-                    ),
-
+                    ft.Divider(height=6, color="transparent"),
                     ft.Text(
                         "Descripción",
                         weight=ft.FontWeight.BOLD,
@@ -86,27 +82,21 @@ class ModalTarjetaCompleta:
                             size=12 if es_pantalla_pequena else 13,
                             text_align=ft.TextAlign.JUSTIFY
                         ),
-                        padding=ft.padding.only(
-                            left=6 if es_pantalla_pequena else 8,
-                            right=6 if es_pantalla_pequena else 8
-                        )
+                        padding=ft.padding.only(left=8, right=8)
                     )
                 ],
-                spacing=6 if es_pantalla_pequena else 8,
-                alignment=ft.MainAxisAlignment.START,   # 🔹 contenido pegado arriba dentro de la tarjeta
+                spacing=2,
+                alignment=ft.MainAxisAlignment.START,
                 horizontal_alignment=ft.CrossAxisAlignment.CENTER,
                 tight=True
             )
         )
 
-        # 📌 Contenedor con espaciador arriba para subir la tarjeta
-        self.dialog.content = ft.Column(
-            [
-                ft.Container(height=20 if es_pantalla_pequena else 80),  # 👈 controla cuánto sube
-                tarjeta_completa
-            ],
-            alignment=ft.MainAxisAlignment.START,   # 🔹 que todo se quede arriba
-            horizontal_alignment=ft.CrossAxisAlignment.CENTER
+        # 🔹 Centramos el modal
+        self.dialog.content = ft.Container(
+            expand=True,
+            content=tarjeta_completa,
+            alignment=ft.alignment.center
         )
 
     def cerrar(self, e):
