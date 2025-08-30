@@ -1,5 +1,5 @@
 import flet as ft
-from app.components.nav_bar import nav_bar
+from app.components.nav import nav_bar
 from app.components.menu_inferior import menu_inferior
 from app.views import configuracion
 
@@ -20,6 +20,7 @@ def pantalla_menu(page: ft.Page, cambiar_pantalla):
         {"icon": ft.Icons.HOME_OUTLINED, "text": "Inicio"},
         {"icon": ft.Icons.GRID_VIEW, "text": "Publicaciones"},
         {"icon": ft.Icons.SETTINGS, "text": "Configuración"},
+        {"icon": "logout", "text": "Cerrar sesión"},
     ]
     def obtener_token(page):
         return getattr(page, "session_token", None)
@@ -33,7 +34,9 @@ def pantalla_menu(page: ft.Page, cambiar_pantalla):
         elif index == 1: # Publicaciones
             cambiar_pantalla("publicaciones")
         elif index == 2: # Configuración
-            configuracion.pantalla_configuracion(page, cambiar_pantalla)  # ✅ Lleva a configuración
+            configuracion.pantalla_configuracion(page, cambiar_pantalla)
+        elif index == 3:
+            cambiar_pantalla("inicio")
 
         build_side_menu()
         update_bottom_bar()
@@ -77,10 +80,13 @@ def pantalla_menu(page: ft.Page, cambiar_pantalla):
     def build_side_menu_item(index, item):
         selected = index == selected_side_index.value
         color = "#3EAEB1" if selected else ft.Colors.BLACK
+        icon = ft.Icon(item["icon"], color=color, size=24) if isinstance(item["icon"], str) \
+            else ft.Icon(item["icon"], color=color, size=24)
+
         return ft.Container(
             content=ft.Row(
                 [
-                    ft.Icon(item["icon"], color=color, size=24),
+                    icon,
                     ft.Text(item["text"], size=16, weight=ft.FontWeight.BOLD, color=color),
                 ],
                 spacing=12,

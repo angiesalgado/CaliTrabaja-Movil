@@ -1,0 +1,30 @@
+# --- Entornos virtuales ---
+venv/
+.venv/
+env/
+
+# --- Archivos de Python ---
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+
+# --- Configuración IDE (PyCharm, VSCode, etc.) ---
+.idea/
+.vscode/
+*.iml
+
+# --- Archivos del sistema ---
+.DS_Store
+Thumbs.db
+
+# --- Archivos de pruebas ---
+.coverage
+*.log
+*.pot
+*.mo

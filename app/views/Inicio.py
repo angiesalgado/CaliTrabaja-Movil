@@ -58,7 +58,7 @@ def pantalla_inicio(page: ft.Page, cambiar_pantalla):
         page.width,
         show_back=False,  # 👉 en Inicio NO aparece la flecha
         show_explora=False,  # 👉 en Inicio NO aparece "Explora en"
-        show_login_button=True,  # 👉 solo en Inicio aparece el botón
+        show_login_icon=True,
         on_login_click=lambda e: cambiar_pantalla("login")  # 👈 acción del botón
     )
 
@@ -404,7 +404,8 @@ def pantalla_inicio(page: ft.Page, cambiar_pantalla):
     # ---------------- LAYOUT PRINCIPAL ----------------
     layout = ft.Column(
         controls=[
-            nav,
+            nav,  # 🔹 Header / Navbar superior
+
             ft.Container(
                 content=ft.Column(
                     controls=[
@@ -413,29 +414,34 @@ def pantalla_inicio(page: ft.Page, cambiar_pantalla):
                         categorias_container,
                         publicaciones_container,
                         crear_cuenta_container,
-                        destacados_container
+                        destacados_container,
                     ],
-                    spacing=10  # 👈 separa entre secciones
+                    spacing=10  # 👈 Separación entre secciones
                 ),
-                padding=ft.padding.only(top=15)  # 👈 agrega espacio entre nav y el resto
-            )
+                padding=ft.padding.only(top=15)  # 👈 Espacio entre nav y contenido
+            ),
         ],
         expand=True,
-        scroll=ft.ScrollMode.ADAPTIVE
+        scroll=ft.ScrollMode.ADAPTIVE  # 👈 Permite scroll del contenido
     )
 
+    # Agregar layout a la página
     page.add(layout)
 
+    # ---------------- NAV INFERIOR (BottomAppBar) ----------------
     page.bottom_appbar = ft.BottomAppBar(
-        content=menu,
+        content=menu,  # 🔹 Menú inferior (para navegación en móvil)
         bgcolor=ft.Colors.WHITE,
         elevation=0
     )
 
     # ---------------- RESPONSIVE ----------------
     def on_resize(e):
+        # 🔹 Ajusta el navbar superior al cambiar el tamaño de la pantalla
         layout.controls[0] = nav_bar(page.width, ft.Ref[ft.Container]())
         page.update()
 
     page.on_resize = on_resize
     page.update()
+
+
