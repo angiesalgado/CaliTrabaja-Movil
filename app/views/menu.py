@@ -21,6 +21,8 @@ def pantalla_menu(page: ft.Page, cambiar_pantalla):
         {"icon": ft.Icons.GRID_VIEW, "text": "Publicaciones"},
         {"icon": ft.Icons.SETTINGS, "text": "Configuración"},
     ]
+    def obtener_token(page):
+        return getattr(page, "session_token", None)
 
     def on_side_nav_click(index):
         selected_side_index.value = index
@@ -46,11 +48,23 @@ def pantalla_menu(page: ft.Page, cambiar_pantalla):
         elif index == 1:  # Categorias
             cambiar_pantalla("categorias")
         elif index == 2:  # Mensajes
-            cambiar_pantalla("mensajes")
+            token = obtener_token(page)
+            if token:
+                cambiar_pantalla("mensajes")
+            else:
+                print("Inicia sesion o registrate")
         elif index == 3:  # Guardados
-            cambiar_pantalla("guardados")
+            token = obtener_token(page)
+            if token:
+                cambiar_pantalla("guardados")
+            else:
+                print("Inicia sesion o registrate")
         elif index == 4:  # Menú
-            cambiar_pantalla("menu")
+            token = obtener_token(page)
+            if token:
+                cambiar_pantalla("menu")
+            else:
+                print("Inicia sesion o registrate")
 
 
         build_side_menu()

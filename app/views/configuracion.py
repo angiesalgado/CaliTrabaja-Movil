@@ -1,5 +1,10 @@
 import flet as ft
+from . import  Inicio
 from app.components.menu_inferior import menu_inferior
+from app.API_services.datos_usuario import obtener_datos
+from app.API_services.cambiar_contraseña import cambiar_contraseña_usuario
+from app.API_services.cerrar_sesion import cerrar_sesion_api
+from app.API_services.deshabilitar_cuenta import deshabilitar_cuenta_usu
 
 # ---------- NAV SUPERIOR DE CONFIGURACIÓN ----------
 def nav_configuracion(page: ft.Page, page_width: float, titulo="Configuración", volver_callback=None):
@@ -41,15 +46,40 @@ def nav_configuracion(page: ft.Page, page_width: float, titulo="Configuración",
 
 # ---------- PANTALLA PRINCIPAL DE CONFIGURACIÓN ----------
 def pantalla_configuracion(page: ft.Page, cambiar_pantalla=None):
-    usuario_nombre = "Angie"
-    usuario_rol = "Cliente"
-    usuario_fecha_union = "12/08/2024"
+
 
     page.controls.clear()
     page.bottom_appbar = None
     page.bgcolor = "#FFFFFF"
     page.padding = 0
     page.spacing = 0
+
+    def obtener_token(page):
+        return getattr(page, "session_token", None)
+
+    def obtener_datos_usuario(page):
+        token = obtener_token(page)
+
+        if not token:
+            print("Debes iniciar sesion o registrarte")
+
+        respuesta= obtener_datos(token)
+        print(f"Datos usuario: {respuesta}")
+
+
+        datos = respuesta.get("usuario")
+
+
+        return {
+            "primer_nombre":datos.get("nombre"),
+            "rol":datos.get("rol"),
+            "fecha": datos.get("fecha_registro")
+        }
+    datos = obtener_datos_usuario(page)
+    nombre =datos.get("primer_nombre")
+    fecha = datos.get("fecha")
+    rol = datos.get("rol")
+
 
     # ---------- FACTORÍA CAMPOS PASSWORD ----------
     def password_field_factory():
@@ -89,7 +119,6 @@ def pantalla_configuracion(page: ft.Page, cambiar_pantalla=None):
             cambiar_pantalla("guardados")
         elif index == 4:
             cambiar_pantalla("menu")
-
     # ---------- SUBVISTAS ----------
     def cambiar_contrasena():
         page.controls.clear()
@@ -97,6 +126,36 @@ def pantalla_configuracion(page: ft.Page, cambiar_pantalla=None):
         actual_field = password_field_factory()
         nueva_field = password_field_factory()
         repetir_field = password_field_factory()
+
+
+        def guardar_contraseña(e):
+
+            token = obtener_token(page)
+            if not token:
+                print("Debes iniciar sesion o registrarte")
+
+            contraseña = actual_field.value.strip() if actual_field.value else None
+            nueva = nueva_field.value.strip() if nueva_field.value else None
+            repetir = repetir_field.value.strip() if repetir_field.value else None
+
+            print(f"CONTRASEÑA ACTUAL: {contraseña}, NUEVA CONTRASEÑA: {nueva}, REPETIR CONTRASEÑA: {repetir}")
+
+            datos = {}
+
+            if contraseña:
+                 datos["actual_contrasena"] = contraseña
+            if nueva:
+                 datos["nueva_contrasena"]= nueva
+            if repetir:
+                 datos["confirmar_contrasena"]= repetir
+
+
+            respuesta = cambiar_contraseña_usuario(token, datos)
+
+            if respuesta.get("message"):
+                print(respuesta["message"])
+                Inicio.pantalla_inicio(page, cambiar_pantalla)
+                page.update()
 
         page.add(
             ft.Column(
@@ -130,6 +189,7 @@ def pantalla_configuracion(page: ft.Page, cambiar_pantalla=None):
                                             color="white",
                                             width=150,
                                             style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=20)),
+                                            on_click=guardar_contraseña
                                         ),
                                         ft.ElevatedButton(
                                             "Cancelar",
@@ -153,6 +213,35 @@ def pantalla_configuracion(page: ft.Page, cambiar_pantalla=None):
         page.controls.clear()
         page.bottom_appbar = None
         confirmar_field = password_field_factory()
+
+        def deshabilitar_cuenta(e):
+
+            token = obtener_token(page)
+            if not token:
+                print("Debes iniciar sesion o registrarte")
+
+            contraseña = confirmar_field.value.strip() if confirmar_field.value else None
+
+
+            print(f"CONTRASEÑA ACTUAL: {contraseña}")
+
+            datos = {}
+
+            if contraseña:
+                 datos["contrasena"] = contraseña
+
+
+
+            respuesta = deshabilitar_cuenta_usu(token, datos)
+
+            if respuesta.get("message"):
+                print(respuesta["message"])
+                cerrar_sesion_api(token)
+                page.session_token = None
+                Inicio.pantalla_inicio(page, cambiar_pantalla)
+                page.update()
+
+
 
         page.add(
             ft.Column(
@@ -189,6 +278,7 @@ def pantalla_configuracion(page: ft.Page, cambiar_pantalla=None):
                                             color="white",
                                             width=170,
                                             style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=20)),
+                                            on_click= deshabilitar_cuenta
                                         ),
                                         ft.ElevatedButton(
                                             "Cancelar",
@@ -232,7 +322,7 @@ def pantalla_configuracion(page: ft.Page, cambiar_pantalla=None):
                                     controls=[
                                         ft.Text("Nombre del usuario:", size=16,
                                                 weight=ft.FontWeight.BOLD, color="#000000"),
-                                        ft.Text(usuario_nombre, size=16, color="#000000")
+                                        ft.Text(nombre, size=16, color="#000000")
                                     ],
                                     spacing=5
                                 ),
@@ -240,7 +330,7 @@ def pantalla_configuracion(page: ft.Page, cambiar_pantalla=None):
                                     controls=[
                                         ft.Text("Rol actual:", size=16,
                                                 weight=ft.FontWeight.BOLD, color="#000000"),
-                                        ft.Text(usuario_rol, size=16, color="#000000")
+                                        ft.Text(rol, size=16, color="#000000")
                                     ],
                                     spacing=5
                                 ),
@@ -248,7 +338,7 @@ def pantalla_configuracion(page: ft.Page, cambiar_pantalla=None):
                                     controls=[
                                         ft.Text("Se unió en:", size=16,
                                                 weight=ft.FontWeight.BOLD, color="#000000"),
-                                        ft.Text(usuario_fecha_union, size=16, color="#000000")
+                                        ft.Text(fecha, size=16, color="#000000")
                                     ],
                                     spacing=5
                                 )

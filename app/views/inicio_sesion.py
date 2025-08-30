@@ -1,7 +1,9 @@
 # login_view.py
 import flet as ft
 import re
+from . import  Inicio
 from app.components.nav_bar import nav_bar
+from app.API_services.iniciar_sesion import iniciar_sesion_api
 
 
 def inicio_sesion(page: ft.Page, cambiar_pantalla):
@@ -42,8 +44,14 @@ def inicio_sesion(page: ft.Page, cambiar_pantalla):
             message_text.value = "Por favor, complete todos los campos."
         elif not validar_email(email):
             message_text.value = "El correo electrónico no es válido."
+        resultado = iniciar_sesion_api(email,password)
+        if resultado.get("success")==False:
+            message_text.value = resultado.get("message", "Error desconocido.")
         else:
-            message_text.value = "Inicio de sesión exitoso (simulado)."
+            message_text.value = "Inicio de sesión exitoso."
+            page.session_token = resultado.get("token")
+            page.clean()
+            Inicio.pantalla_inicio(page, cambiar_pantalla)
         page.update()
 
     def volver_atras(e):

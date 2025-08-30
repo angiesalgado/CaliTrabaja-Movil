@@ -2,6 +2,9 @@
 import flet as ft
 import asyncio
 from flet import Icons
+from pyexpat.errors import messages
+
+from app.API_services.inicio import inicio_api
 from app.components.nav_bar import nav_bar
 from app.components.menu_inferior import menu_inferior
 from app.components.ModalReporte import ModalReporte
@@ -10,6 +13,8 @@ from app.components.MenuTarjetasOpciones import menu_opciones
 
 
 def pantalla_inicio(page: ft.Page, cambiar_pantalla):
+
+
     # ---------------- CONFIGURACIÓN GENERAL ----------------
     page.controls.clear()
     page.bottom_appbar = None
@@ -31,6 +36,8 @@ def pantalla_inicio(page: ft.Page, cambiar_pantalla):
     TEXT_COLOR = "#000000"
     BORDER_COLOR = "#D9D9D9"
 
+    def obtener_token(page):
+        return getattr(page, "session_token", None)
     # ---------------- INSTANCIA DE MODAL REPORTE Y TARJETA ----------------
     modal_reporte = ModalReporte()
     page.overlay.append(modal_reporte.dialog)
@@ -197,7 +204,7 @@ def pantalla_inicio(page: ft.Page, cambiar_pantalla):
     )
 
     # ---------------- FUNCIÓN TARJETA (ESTILO VERTICAL) ----------------
-    def tarjeta_horizontal(nombre, profesion, descripcion, costo, calificacion=4):
+    def tarjeta_horizontal(nombre, profesion, descripcion, costo, calificacion):
         mostrar_boton = len(descripcion) > 70
 
         stars = ft.Row(
@@ -280,18 +287,29 @@ def pantalla_inicio(page: ft.Page, cambiar_pantalla):
             )
         )
 
+    def obtener_datos(page):
+        token = obtener_token(page)
+        respuesta = inicio_api(token)
+        print(respuesta)
+        publicaciones_recientes = respuesta.get("publicaciones_recientes")
+        publicaciones_aleatorias = respuesta.get("publicaciones_aleatorias")
+
+        return {
+            "recientes": publicaciones_recientes,
+            "aleatorias": publicaciones_aleatorias
+        }
+
+    valores = obtener_datos(page)
+    recientes=valores.get("recientes" or [])
+    aleatorias=valores.get("aleatorias" or [])
     # ---------------- PUBLICACIONES ----------------
-    publicaciones = [
-        {"nombre": "Claudia Henao", "profesion": "Fotógrafa", "descripcion": "Creatividad, técnica y detalle.", "costo": "30.000", "calificacion": 4},
-        {"nombre": "Carlos Restrepo", "profesion": "Electricista", "descripcion": "Instalaciones eléctricas seguras para hogares y empresas. Soluciones rápidas y garantizadas.", "costo": "55.000", "calificacion": 5},
-        {"nombre": "Roberto Gómez", "profesion": "Plomero", "descripcion": "Fugas, instalaciones y mantenimiento con servicio confiable.", "costo": "50.000", "calificacion": 3},
-    ]
+
 
     publicaciones_container = ft.Column(
         [
             ft.Container(content=ft.Text("Te podría interesar", size=22, weight=ft.FontWeight.BOLD, color=TEXT_COLOR),
                          alignment=ft.alignment.center, padding=ft.padding.only(bottom=5, top=15)),
-            ft.Container(content=ft.Row(controls=[tarjeta_horizontal(**p) for p in publicaciones],
+            ft.Container(content=ft.Row(controls=[tarjeta_horizontal(**p) for p in aleatorias],
                                         spacing=15, scroll=ft.ScrollMode.HIDDEN),
                          padding=ft.padding.symmetric(horizontal=15))
         ]
@@ -340,26 +358,16 @@ def pantalla_inicio(page: ft.Page, cambiar_pantalla):
         )
     )
 
-    # ---------------- SECCIÓN SERVICIOS DESTACADOS ----------------
-    destacados = [
-        {"nombre": "Claudia Henao", "profesion": "Fotógrafa", "descripcion": "Con una combinación de técnica, creatividad y un profundo respeto por el instante.", "costo": "30.000", "calificacion": 5},
-        {"nombre": "Carlos Restrepo", "profesion": "Diseñador Gráfico", "descripcion": "Transformo ideas en piezas visuales que comunican y conectan.", "costo": "40.000", "calificacion": 4},
-        {"nombre": "Andrea López", "profesion": "Maestra de Inglés", "descripcion": "Clases personalizadas con enfoque comunicativo y dinámico.", "costo": "35.000", "calificacion": 5},
-    ]
 
-    otros_destacados = [
-        {"nombre": "Roberto Gómez", "profesion": "Plomero", "descripcion": "Fugas, instalaciones y mantenimiento con servicio confiable.", "costo": "50.000", "calificacion": 4},
-        {"nombre": "María Torres", "profesion": "Chef Personal", "descripcion": "Cocina gourmet en la comodidad de tu hogar.", "costo": "80.000", "calificacion": 5},
-        {"nombre": "Juan Pérez", "profesion": "Entrenador Personal", "descripcion": "Rutinas adaptadas a tus objetivos y condición física.", "costo": "60.000", "calificacion": 5},
-    ]
+    # ---------------- SECCIÓN SERVICIOS DESTACADOS ----------------
+
 
     destacados_container = ft.Column(
         [
             ft.Container(content=ft.Text("Servicios destacados", size=22, weight=ft.FontWeight.BOLD, color=TEXT_COLOR),
                          alignment=ft.alignment.center, padding=ft.padding.only(bottom=5, top=15)),
             ft.Container(content=ft.Column(controls=[
-                ft.Row(controls=[tarjeta_horizontal(**p) for p in destacados], spacing=15, scroll=ft.ScrollMode.HIDDEN),
-                ft.Row(controls=[tarjeta_horizontal(**p) for p in otros_destacados], spacing=15, scroll=ft.ScrollMode.HIDDEN)
+                ft.Row(controls=[tarjeta_horizontal(**p) for p in recientes], spacing=15, scroll=ft.ScrollMode.HIDDEN),
             ], spacing=20), padding=ft.padding.symmetric(horizontal=15))
         ]
     )
@@ -373,11 +381,23 @@ def pantalla_inicio(page: ft.Page, cambiar_pantalla):
         elif index == 1:  # Categorias
             cambiar_pantalla("categorias")
         elif index == 2:  # Mensajes
-            cambiar_pantalla("mensajes")
+            token =obtener_token(page)
+            if token:
+                cambiar_pantalla("mensajes")
+            else:
+                print("Inicia sesion o registrate")
         elif index == 3:  # Guardados
-            cambiar_pantalla("guardados")
+            token = obtener_token(page)
+            if token:
+                cambiar_pantalla("guardados")
+            else:
+                print("Inicia sesion o registrate")
         elif index == 4:  # Menú
-            cambiar_pantalla("menu")
+            token = obtener_token(page)
+            if token:
+                cambiar_pantalla("menu")
+            else:
+                print("Inicia sesion o registrate")
 
     menu = menu_inferior(selected_index, on_bottom_nav_click)
 

@@ -42,6 +42,7 @@ def nav_superior(page_width: float, titulo="Título", on_back_click=lambda e: No
     )
 
 
+
 # ---------- VISTA GUARDADOS ----------
 def render_guardados(page: ft.Page, cambiar_pantalla=None):
     page.clean()
@@ -168,6 +169,9 @@ def render_guardados(page: ft.Page, cambiar_pantalla=None):
         spacing=0,
     )
 
+    def obtener_token(page):
+        return getattr(page, "session_token", None)
+
     # ---------- Navegación inferior ----------
     def on_bottom_nav_click(index):
         if index == 0:  # Inicio
@@ -175,11 +179,23 @@ def render_guardados(page: ft.Page, cambiar_pantalla=None):
         elif index == 1:  # Categorias
             cambiar_pantalla("categorias")
         elif index == 2:  # Mensajes
-            cambiar_pantalla("mensajes")
+            token = obtener_token(page)
+            if token:
+                cambiar_pantalla("mensajes")
+            else:
+                print("Inicia sesion o registrate")
         elif index == 3:  # Guardados
-            cambiar_pantalla("guardados")
+            token = obtener_token(page)
+            if token:
+                cambiar_pantalla("guardados")
+            else:
+                print("Inicia sesion o registrate")
         elif index == 4:  # Menú
-            cambiar_pantalla("menu")
+            token = obtener_token(page)
+            if token:
+                cambiar_pantalla("menu")
+            else:
+                print("Inicia sesion o registrate")
 
     # Barra inferior
     page.bottom_appbar = ft.BottomAppBar(

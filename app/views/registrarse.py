@@ -1,6 +1,8 @@
 import flet as ft
 import re
+from app.API_services.registrar_usuario import registrar_usuario_api
 from app.components.nav_bar import nav_bar
+from . import Inicio
 
 def pantalla_registro(page: ft.Page, cambiar_pantalla, origen=None):
     page.title = "Registrarse"
@@ -30,9 +32,23 @@ def pantalla_registro(page: ft.Page, cambiar_pantalla, origen=None):
             message_text.value = "Correo electrónico inválido."
         elif password_field.value != confirm_field.value:
             message_text.value = "Las contraseñas no coinciden."
+        nombre = nombre_field.value
+        apellido = apellido_field.value
+        email = email_field.value
+        password = password_field.value
+        confirm = confirm_field.value
+        resultado = registrar_usuario_api(nombre,apellido,email,password,confirm)
+        if resultado.get("success")==False:
+            message_text.value = resultado.get("message", "Error desconocido.")
         else:
             message_text.value = "✅ Registro exitoso (simulado)."
+            page.session_token = resultado.get("token")
+            page.clean()
+            Inicio.pantalla_inicio(page,cambiar_pantalla)
         page.update()
+
+
+
 
     def ir_a_login(e):
         cambiar_pantalla("login")

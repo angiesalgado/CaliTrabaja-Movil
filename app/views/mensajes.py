@@ -3,6 +3,11 @@ from app.components.menu_inferior import menu_inferior
 from app.components.nav_bar import nav_bar
 
 def pantalla_mensajes(page: ft.Page, cambiar_pantalla):
+
+    def obtener_token(page):
+        return  getattr(page, "session_token", None)
+
+
     # Limpiar la página
     page.controls.clear()
     page.bottom_appbar = None
@@ -13,16 +18,28 @@ def pantalla_mensajes(page: ft.Page, cambiar_pantalla):
     selected_index = 2
 
     def on_bottom_nav_click(index):
-        if index == 0:   # Inicio
+        if index == 0:  # Inicio
             cambiar_pantalla("inicio")
-        elif index == 1: # Categorías
+        elif index == 1:  # Categorias
             cambiar_pantalla("categorias")
-        elif index == 2: # Mensajes
-            cambiar_pantalla("mensajes")
-        elif index == 3: # Guardados
-            cambiar_pantalla("guardados")
-        elif index == 4: # Menú
-            cambiar_pantalla("menu")
+        elif index == 2:  # Mensajes
+            token = obtener_token(page)
+            if token:
+                cambiar_pantalla("mensajes")
+            else:
+                print("Inicia sesion o registrate")
+        elif index == 3:  # Guardados
+            token = obtener_token(page)
+            if token:
+                cambiar_pantalla("guardados")
+            else:
+                print("Inicia sesion o registrate")
+        elif index == 4:  # Menú
+            token = obtener_token(page)
+            if token:
+                cambiar_pantalla("menu")
+            else:
+                print("Inicia sesion o registrate")
 
     # ---------- NAV SUPERIOR ----------
     nav = nav_bar(
