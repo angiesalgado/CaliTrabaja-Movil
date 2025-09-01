@@ -204,7 +204,7 @@ def pantalla_inicio(page: ft.Page, cambiar_pantalla):
     )
 
     # ---------------- FUNCIÓN TARJETA (ESTILO VERTICAL) ----------------
-    def tarjeta_horizontal(nombre, profesion, descripcion, costo, calificacion):
+    def tarjeta_horizontal(nombre, categoria, descripcion, costo, calificacion, publicacion_id, usuario_id):
         mostrar_boton = len(descripcion) > 70
 
         stars = ft.Row(
@@ -214,9 +214,23 @@ def pantalla_inicio(page: ft.Page, cambiar_pantalla):
             alignment=ft.MainAxisAlignment.CENTER
         )
 
+        token = obtener_token(page)
+        print(token)
 
-        # Menú con Guardar + Reportar
-        menu = menu_opciones(page, modal_reporte, text_color=TEXT_COLOR, incluir_guardar=True)
+        if token == None:
+            menu = menu_opciones(page, modal_reporte, incluir_guardar=True)
+            print("Debes iniciar sesion o registrarte GUARDAR")
+
+        else:
+            print(publicacion_id)
+            # Menú con Guardar + Reportar
+            menu = menu_opciones(page, modal_reporte, text_color=TEXT_COLOR, incluir_guardar=True, publicacion_id=publicacion_id, usuario_id=usuario_id)
+
+            print("PUBLICACION O REPORTE HECHO")
+
+
+
+
 
         # Contenido principal
         tarjeta_contenido = ft.Container(
@@ -229,7 +243,7 @@ def pantalla_inicio(page: ft.Page, cambiar_pantalla):
                     ft.Text(nombre, weight=ft.FontWeight.BOLD, size=17, color=TEXT_COLOR,
                             text_align=ft.TextAlign.CENTER),
                     stars,
-                    ft.Text(profesion, size=14, weight=ft.FontWeight.W_500, color=TEXT_COLOR,
+                    ft.Text(categoria, size=14, weight=ft.FontWeight.W_500, color=TEXT_COLOR,
                             text_align=ft.TextAlign.CENTER),
                     ft.Text("Descripción:", size=12, color=ft.Colors.BLACK54, text_align=ft.TextAlign.CENTER),
 
@@ -250,7 +264,7 @@ def pantalla_inicio(page: ft.Page, cambiar_pantalla):
                     ft.Container(
                         content=ft.TextButton(
                             "Ver más" if mostrar_boton else "",
-                            on_click=(lambda e: abrir_modal_detalle(nombre, profesion, descripcion, costo,
+                            on_click=(lambda e: abrir_modal_detalle(nombre, categoria, descripcion, costo,
                                                                     calificacion)) if mostrar_boton else None,
                             style=ft.ButtonStyle(
                                 color=PRIMARY_COLOR if mostrar_boton else "transparent",

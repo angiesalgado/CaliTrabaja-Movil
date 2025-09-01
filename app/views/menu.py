@@ -2,6 +2,8 @@ import flet as ft
 from app.components.nav import nav_bar
 from app.components.menu_inferior import menu_inferior
 from app.views import configuracion
+from app.API_services.cerrar_sesion import cerrar_sesion_api
+from . import Inicio
 
 
 def pantalla_menu(page: ft.Page, cambiar_pantalla):
@@ -25,6 +27,8 @@ def pantalla_menu(page: ft.Page, cambiar_pantalla):
     def obtener_token(page):
         return getattr(page, "session_token", None)
 
+    token = obtener_token(page)
+
     def on_side_nav_click(index):
         selected_side_index.value = index
         selected_bottom_index.value = -1
@@ -36,7 +40,11 @@ def pantalla_menu(page: ft.Page, cambiar_pantalla):
         elif index == 2: # Configuración
             configuracion.pantalla_configuracion(page, cambiar_pantalla)
         elif index == 3:
-            cambiar_pantalla("inicio")
+            cerrar_sesion_api(token)
+            page.session_token = None
+            Inicio.pantalla_inicio(page, cambiar_pantalla)
+            page.update()
+
 
         build_side_menu()
         update_bottom_bar()
