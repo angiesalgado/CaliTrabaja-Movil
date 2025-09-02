@@ -17,20 +17,21 @@ def pantalla_categorias(page: ft.Page, cambiar_pantalla):
         return getattr(page, "session_token", None)
 
     categorias = [
-        ("tecnico.svg", "Reparación y\nmantenimiento"),
-        ("cuidado.svg", "Cuidado y\nAsistencia"),
-        ("mascoteros.svg", "Bienestar de\nmascotas"),
-        ("educativos.svg", "Educativos y\naprendizaje"),
-        ("limpieza.svg", "Hogar y\nlimpieza"),
-        ("construccion.png", "Construcción y\nRemodelación"),
-        ("artisticos.svg", "Artísticos y\ncreatividad"),
-        ("transporte.svg", "Movilidad y\ntransporte"),
-        ("culinarios.svg", "Gastronomía"),
-        ("salud_bien.svg", "Bienestar\nPersonal"),
-        ("eventos.svg", "Eventos")
+        ("tecnico.svg", "Reparación y\nmantenimiento", 1),
+        ("cuidado.svg", "Cuidado y\nAsistencia", 2),
+        ("mascoteros.svg", "Bienestar de\nmascotas", 3),
+        ("educativos.svg", "Educativos y\naprendizaje", 4),
+        ("limpieza.svg", "Hogar y\nlimpieza", 5),
+        ("construccion.png", "Construcción y\nRemodelación", 6),
+        ("artisticos.svg", "Artísticos y\ncreatividad", 7),
+        ("transporte.svg", "Movilidad y\ntransporte", 8),
+        ("culinarios.svg", "Gastronomía", 9),
+        ("salud_bien.svg", "Bienestar\nPersonal", 10),
+        ("eventos.svg", "Eventos", 11)
     ]
 
-    def crear_categoria(imagen, texto):
+    def crear_categoria(imagen, texto, id_categoria):
+
         return ft.Container(
             content=ft.Column(
                 horizontal_alignment=ft.CrossAxisAlignment.CENTER,
@@ -61,15 +62,15 @@ def pantalla_categorias(page: ft.Page, cambiar_pantalla):
                 ]
             ),
             # 👉 Al hacer clic en cualquier categoría va a publicaciones con origen=categorias
-            on_click=lambda e: cambiar_pantalla("publicaciones", origen="categorias")
+            on_click=lambda e, cat_id = id_categoria: cambiar_pantalla("publicaciones", origen={"categoria_id": cat_id} )
         )
 
     # Agrupar categorías en filas de a 3
     filas = []
     fila = []
 
-    for i, (imagen, texto) in enumerate(categorias):
-        fila.append(crear_categoria(imagen, texto))
+    for i, (imagen, texto, id_categoria) in enumerate(categorias):
+        fila.append(crear_categoria(imagen, texto,id_categoria,))
         if len(fila) == 3 or i == len(categorias) - 1:
             while len(fila) < 3:
                 fila.append(ft.Container(width=100, height=100))  # espacio vacío
@@ -103,11 +104,8 @@ def pantalla_categorias(page: ft.Page, cambiar_pantalla):
             else:
                 print("Inicia sesion o registrate")
         elif index == 4:  # Menú
-            token = obtener_token(page)
-            if token:
                 cambiar_pantalla("menu")
-            else:
-                print("Inicia sesion o registrate")
+
 
     nav = nav_bar(
         page,

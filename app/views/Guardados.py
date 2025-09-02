@@ -252,11 +252,8 @@ def render_guardados(page: ft.Page, cambiar_pantalla=None):
             else:
                 print("Inicia sesion o registrate")
         elif index == 4:  # Menú
-            token = obtener_token(page)
-            if token:
                 cambiar_pantalla("menu")
-            else:
-                print("Inicia sesion o registrate")
+
 
     # Barra inferior
     page.bottom_appbar = ft.BottomAppBar(

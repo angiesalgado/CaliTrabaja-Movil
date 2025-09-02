@@ -5,7 +5,7 @@ from app.API_services.guardar_publicacion import guardar_publicacion
 from app.API_services.guardar_reporte import enviar_reporte
 
 
-def menu_opciones(page, modal_reporte, text_color="#000000", incluir_guardar=None, publicacion_id=None, usuario_id=None):
+def menu_opciones(page, modal_reporte, text_color="#000000", incluir_guardar=None, incluir_reporte=None,  publicacion_id=None, usuario_id=None):
 
     items = []
 
@@ -52,21 +52,21 @@ def menu_opciones(page, modal_reporte, text_color="#000000", incluir_guardar=Non
         modal_reporte.show(page)
 
 
-
-    # Opción Reportar
-    items.append(
-        ft.PopupMenuItem(
-            content=ft.Row(
-                [
-                    ft.Icon(Icons.ERROR_OUTLINE, size=16, color=text_color),
-                    ft.Text("Reportar", color=text_color),
-                ],
-                spacing=8,
-                alignment="start",
-            ),
-            on_click=lambda e: reportar(),
+    if incluir_reporte:
+        # Opción Reportar
+        items.append(
+            ft.PopupMenuItem(
+                content=ft.Row(
+                    [
+                        ft.Icon(Icons.ERROR_OUTLINE, size=16, color=text_color),
+                        ft.Text("Reportar", color=text_color),
+                    ],
+                    spacing=8,
+                    alignment="start",
+                ),
+                on_click=lambda e: reportar(),
+            )
         )
-    )
 
     return ft.Container(
         content=ft.PopupMenuButton(

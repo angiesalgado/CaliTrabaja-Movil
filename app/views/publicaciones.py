@@ -76,32 +76,11 @@ def publicaciones(page: ft.Page, cambiar_pantalla, origen=None):
     TEXT_COLOR = "#000000"
     BORDER_COLOR = "#D9D9D9"
 
-    # ---------------- REFERENCIAS PARA FILTROS ----------------
-    categoria_ref = ft.Ref[ft.RadioGroup]()
-    fecha_ref = ft.Ref[ft.RadioGroup]()
+    #---------------------------------------------
 
-    # ---------------- INSTANCIA DEL MODAL ----------------
-    modal_reporte = ModalReporte()
-    page.overlay.append(modal_reporte.dialog)
 
-    modal_detalle = ModalTarjetaCompleta()
-    page.overlay.append(modal_detalle.dialog)
 
-    def abrir_modal_detalle(nombre, profesion, descripcion, costo, calificacion):
-        print("CLICK -> abrir_modal_detalle:", nombre)  # <-- mira la consola donde corres Flet
-        modal_detalle.set_content(nombre, profesion, descripcion, costo, calificacion)
-        page.dialog = modal_detalle.dialog
-        modal_detalle.dialog.open = True
-        page.update()
-
-    # 🔹 Overlay oscuro (para cerrar al hacer clic afuera)
-    overlay = ft.Container(
-        bgcolor=ft.Colors.with_opacity(0.5, ft.Colors.BLACK),
-        width=page.width,
-        height=page.height,
-        visible=False,
-        on_click=lambda e: cerrar_filtros(),
-    )
+    #------------------------------------------------------------------------------
 
     def obtener_token(page):
         return getattr(page, "session_token", None)
@@ -131,6 +110,8 @@ def publicaciones(page: ft.Page, cambiar_pantalla, origen=None):
                 "profesion": pub.get("subcategoria"),
                 "descripcion": pub.get("descripcion"),
                 "costo": pub.get("costo"),
+                "usuario_id":pub.get("usuario_id"),
+                "publicacion_id":pub.get("publicacion_id")
             })
 
         # Devuelvo lo que necesites
@@ -141,7 +122,46 @@ def publicaciones(page: ft.Page, cambiar_pantalla, origen=None):
             "categoria_seleccionada": publicaciones.get("categoria_selecionada")
         }
 
-    publicaciones_data = obtener_publicaciones()
+    # Si se pasó un filtro desde inicio
+    if origen and "categoria_id" in origen:
+        cat_id = origen["categoria_id"]
+        resultado = obtener_publicaciones(categoria_id=cat_id)
+    else:
+        resultado = obtener_publicaciones()
+
+    publicaciones_filtradas = resultado["lista"]
+
+
+
+
+    # ---------------- REFERENCIAS PARA FILTROS ----------------
+    categoria_ref = ft.Ref[ft.RadioGroup]()
+    fecha_ref = ft.Ref[ft.RadioGroup]()
+
+    # ---------------- INSTANCIA DEL MODAL ----------------
+    modal_reporte = ModalReporte()
+    page.overlay.append(modal_reporte.dialog)
+
+    modal_detalle = ModalTarjetaCompleta()
+    page.overlay.append(modal_detalle.dialog)
+
+    def abrir_modal_detalle(nombre, profesion, descripcion, costo, calificacion):
+        print("CLICK -> abrir_modal_detalle:", nombre)  # <-- mira la consola donde corres Flet
+        modal_detalle.set_content(nombre, profesion, descripcion, costo, calificacion)
+        page.dialog = modal_detalle.dialog
+        modal_detalle.dialog.open = True
+        page.update()
+
+    # 🔹 Overlay oscuro (para cerrar al hacer clic afuera)
+    overlay = ft.Container(
+        bgcolor=ft.Colors.with_opacity(0.5, ft.Colors.BLACK),
+        width=page.width,
+        height=page.height,
+        visible=False,
+        on_click=lambda e: cerrar_filtros(),
+    )
+
+
 
 
     # ---------------- FUNCIONES PANEL ----------------
@@ -343,7 +363,7 @@ def publicaciones(page: ft.Page, cambiar_pantalla, origen=None):
 
     # ---------------- ENCABEZADO RESULTADOS ----------------
     resultado_texto = ft.Text(
-        f"{publicaciones_data['total_resultados']} resultados",
+        f"{len(publicaciones_filtradas)} resultados",
         weight=ft.FontWeight.BOLD,
         size=14,
         color="#666666"
@@ -408,7 +428,7 @@ def publicaciones(page: ft.Page, cambiar_pantalla, origen=None):
 
 
     # ---------------- FUNCIÓN TARJETAS ----------------
-    def tarjeta_horizontal(nombre, profesion, descripcion, costo, calificacion=4):
+    def tarjeta_horizontal(nombre, profesion, descripcion, costo, usuario_id, publicacion_id, calificacion=4):
         mostrar_boton = len(descripcion) > 70
 
         stars = ft.Row(
@@ -417,9 +437,15 @@ def publicaciones(page: ft.Page, cambiar_pantalla, origen=None):
             spacing=0,
             alignment=ft.MainAxisAlignment.CENTER
         )
+        token = obtener_token(page)
 
-        # Menú con Guardar + Reportar
-        menu = menu_opciones(page, modal_reporte, text_color=TEXT_COLOR, incluir_guardar=True)
+        if token == None:
+            menu = menu_opciones(page, modal_reporte, incluir_guardar=False, incluir_reporte=False)
+            print("Debes iniciar sesion o registrarte GUARDAR")
+
+        else:
+            # Menú con Guardar + Reportar
+            menu = menu_opciones(page, modal_reporte, text_color=TEXT_COLOR, incluir_guardar=True, incluir_reporte=True,  usuario_id=usuario_id, publicacion_id=publicacion_id)
 
         # Contenido principal
         tarjeta_contenido = ft.Container(
@@ -502,8 +528,9 @@ def publicaciones(page: ft.Page, cambiar_pantalla, origen=None):
         horizontal_alignment=ft.CrossAxisAlignment.CENTER
     )
 
+    grid_column.controls.clear()
     # 🔹 Llenar el grid con todas las publicaciones al inicio
-    publicaciones = obtener_publicaciones()["lista"]
+    publicaciones = publicaciones_filtradas
 
     for i in range(0, len(publicaciones), 2):
         fila = ft.Container(
@@ -562,11 +589,20 @@ def publicaciones(page: ft.Page, cambiar_pantalla, origen=None):
         elif index == 1:  # Categorias
             cambiar_pantalla("categorias")
         elif index == 2:  # Mensajes
-            cambiar_pantalla("mensajes")
+            token = obtener_token(page)
+            if token:
+                cambiar_pantalla("mensajes")
+            else:
+                print("Inicia sesion o registrate")
         elif index == 3:  # Guardados
-            cambiar_pantalla("guardados")
+            token = obtener_token(page)
+            if token:
+                cambiar_pantalla("guardados")
+            else:
+                print("Inicia sesion o registrate")
         elif index == 4:  # Menú
-            cambiar_pantalla("menu")
+                cambiar_pantalla("menu")
+
 
     menu = menu_inferior(selected_index, on_bottom_nav_click)
 

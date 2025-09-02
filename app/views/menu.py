@@ -17,38 +17,49 @@ def pantalla_menu(page: ft.Page, cambiar_pantalla):
     selected_bottom_index = ft.Ref[int]()
     selected_bottom_index.value = 4  # Menú seleccionado por defecto
 
-    # Ítems del menú lateral
-    side_menu_items = [
-        {"icon": ft.Icons.HOME_OUTLINED, "text": "Inicio"},
-        {"icon": ft.Icons.GRID_VIEW, "text": "Publicaciones"},
-        {"icon": ft.Icons.SETTINGS, "text": "Configuración"},
-        {"icon": "logout", "text": "Cerrar sesión"},
-    ]
+
     def obtener_token(page):
         return getattr(page, "session_token", None)
 
     token = obtener_token(page)
 
+    # Construye dinámicamente los ítems del menú lateral
+    def get_side_menu_items():
+        items = [
+            {"icon": ft.Icons.HOME_OUTLINED, "text": "Inicio"},
+            {"icon": ft.Icons.GRID_VIEW, "text": "Publicaciones"},
+        ]
+        if token:
+            items.append({"icon": ft.Icons.SETTINGS, "text": "Configuración"})
+            items.append({"icon": "logout", "text": "Cerrar sesión"})
+        return items
+
+    # ⚠️ Usa esto en vez de la lista fija
+    side_menu_items = get_side_menu_items()
+
+
+
     def on_side_nav_click(index):
         selected_side_index.value = index
         selected_bottom_index.value = -1
 
-        if index == 0:   # Inicio
+        item_text = side_menu_items[index]["text"]
+
+        if item_text == "Inicio":
             cambiar_pantalla("inicio")
-        elif index == 1: # Publicaciones
+        elif item_text == "Publicaciones":
             cambiar_pantalla("publicaciones")
-        elif index == 2: # Configuración
+        elif item_text == "Configuración":
             configuracion.pantalla_configuracion(page, cambiar_pantalla)
-        elif index == 3:
+        elif item_text == "Cerrar sesión":
             cerrar_sesion_api(token)
             page.session_token = None
             Inicio.pantalla_inicio(page, cambiar_pantalla)
-            page.update()
-
 
         build_side_menu()
         update_bottom_bar()
         page.update()
+
 
     def on_bottom_nav_click(index):
         selected_bottom_index.value = index
@@ -71,11 +82,8 @@ def pantalla_menu(page: ft.Page, cambiar_pantalla):
             else:
                 print("Inicia sesion o registrate")
         elif index == 4:  # Menú
-            token = obtener_token(page)
-            if token:
-                cambiar_pantalla("menu")
-            else:
-                print("Inicia sesion o registrate")
+            cambiar_pantalla("menu")
+
 
 
         build_side_menu()
