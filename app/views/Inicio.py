@@ -96,7 +96,7 @@ def pantalla_inicio(page: ft.Page, cambiar_pantalla):
         height=90,
         bgcolor="#D9D9D9",
         border_radius=ft.border_radius.all(2),
-        margin=ft.margin.symmetric(horizontal=10, vertical=5),
+        margin=ft.margin.symmetric(horizontal=8, vertical=5),
         padding=14
     )
 
@@ -162,7 +162,7 @@ def pantalla_inicio(page: ft.Page, cambiar_pantalla):
             ],
             alignment=ft.MainAxisAlignment.SPACE_BETWEEN
         ),
-        padding=ft.padding.symmetric(horizontal=15, vertical=8)
+        padding=ft.padding.symmetric(horizontal=8, vertical=8)
     )
 
 
@@ -180,6 +180,135 @@ def pantalla_inicio(page: ft.Page, cambiar_pantalla):
         {"nombre": "Bienestar Personal", "icono": "salud_bien.svg", "id":11}
 
     ]
+
+    # --- Paginación categorías (carrusel) ---
+    CAT_CARD_WIDTH = 85  # ancho aproximado de cada item (icono + texto)
+    CAT_SPACING = 12  # debe coincidir con el spacing del listado
+    H_PADDING = 15  # padding horizontal del contenedor de categorías
+
+    state_paginacion = {"num_pages": 1, "active": 0}
+
+    def _build_indicators(n, active=0):
+        indicadores.controls.clear()
+
+        # intentos de iconos válidos (fallbacks)
+        filled_icon = (
+                getattr(ft.Icons, "CIRCLE", None)
+                or getattr(ft.Icons, "FIBER_MANUAL_RECORD", None)
+                or getattr(ft.Icons, "LENS", None)
+                or getattr(ft.Icons, "RADIO_BUTTON_CHECKED", None)
+        )
+        outline_icon = (
+                getattr(ft.Icons, "CIRCLE_OUTLINE", None)
+                or getattr(ft.Icons, "RADIO_BUTTON_UNCHECKED", None)
+                or getattr(ft.Icons, "RADIO_BUTTON_OFF", None)
+        )
+
+        use_text_bullets = (filled_icon is None) or (outline_icon is None)
+
+        for i in range(n):
+            if use_text_bullets:
+                # si no hay iconos disponibles, usar texto como fallback
+                indicadores.controls.append(
+                    ft.Text(
+                        "●" if i == active else "○",
+                        size=12,
+                        color=PRIMARY_COLOR if i == active else ft.Colors.GREY_400,
+                    )
+                )
+            else:
+                icon_to_use = filled_icon if i == active else outline_icon
+                # IMPORTANTE: pasar el icono como primer argumento (posicional), no name=
+                indicadores.controls.append(
+                    ft.Icon(icon_to_use, size=8, color=PRIMARY_COLOR if i == active else ft.Colors.GREY_400)
+                )
+
+    def _items_per_page():
+        viewport = max(1, int(page.width - (H_PADDING * 2)))
+        approx = CAT_CARD_WIDTH + CAT_SPACING
+        return max(1, viewport // approx)
+
+    def _config_pagination():
+        items = _items_per_page()
+        n = (len(categorias) + items - 1) // items
+        state_paginacion["num_pages"] = max(1, n)
+        state_paginacion["active"] = min(state_paginacion["active"], state_paginacion["num_pages"] - 1)
+        indicadores_container.visible = state_paginacion["num_pages"] > 1
+        _build_indicators(state_paginacion["num_pages"], state_paginacion["active"])
+        page.update()
+
+    def _on_cat_scroll(e: ft.OnScrollEvent):
+        try:
+            max_extent = float(e.max_scroll_extent or 0)
+            pixels = float(e.pixels or 0)
+        except Exception:
+            return
+        if state_paginacion["num_pages"] <= 1 or max_extent <= 0:
+            return
+        ratio = pixels / max_extent
+        idx = int(round(ratio * (state_paginacion["num_pages"] - 1)))
+        idx = max(0, min(state_paginacion["num_pages"] - 1, idx))
+        if idx != state_paginacion["active"]:
+            state_paginacion["active"] = idx
+            _build_indicators(state_paginacion["num_pages"], idx)
+            page.update()
+
+    # --- fin helpers carrusel ---
+
+    # --- Paginación publicaciones (carrusel) ---
+    PUB_CARD_WIDTH = 195
+    PUB_SPACING = 15
+    PUB_PADDING = 15
+
+    state_publi = {"num_pages": 1, "active": 0}
+
+    indicadores_publi = ft.Row(controls=[], alignment=ft.MainAxisAlignment.CENTER, spacing=4)
+    indicadores_publi_container = ft.Container(content=indicadores_publi,
+                                               alignment=ft.alignment.center,
+                                               padding=ft.padding.only(top=4),
+                                               visible=False)
+
+    def _build_indicators_publi(n, active=0):
+        indicadores_publi.controls.clear()
+        for i in range(n):
+            indicadores_publi.controls.append(
+                ft.Text("●" if i == active else "○",
+                        size=12,
+                        color=PRIMARY_COLOR if i == active else ft.Colors.GREY_400)
+            )
+
+    def _items_per_page_publi():
+        viewport = max(1, int(page.width - (PUB_PADDING * 2)))
+        approx = PUB_CARD_WIDTH + PUB_SPACING
+        return max(1, viewport // approx)
+
+    def _config_pagination_publi():
+        items = _items_per_page_publi()
+        n = (len(aleatorias) + items - 1) // items
+        state_publi["num_pages"] = max(1, n)
+        state_publi["active"] = min(state_publi["active"], state_publi["num_pages"] - 1)
+        indicadores_publi_container.visible = state_publi["num_pages"] > 1
+        _build_indicators_publi(state_publi["num_pages"], state_publi["active"])
+        page.update()
+
+    def _on_publi_scroll(e: ft.OnScrollEvent):
+        try:
+            max_extent = float(e.max_scroll_extent or 0)
+            pixels = float(e.pixels or 0)
+        except Exception:
+            return
+        if state_publi["num_pages"] <= 1 or max_extent <= 0:
+            return
+        ratio = pixels / max_extent
+        idx = int(round(ratio * (state_publi["num_pages"] - 1)))
+        idx = max(0, min(state_publi["num_pages"] - 1, idx))
+        if idx != state_publi["active"]:
+            state_publi["active"] = idx
+            _build_indicators_publi(state_publi["num_pages"], idx)
+            page.update()
+
+
+
     def filtrar_por_categoria(cat_id):
         print("filtrar_por_categoria", cat_id)
 
@@ -221,7 +350,14 @@ def pantalla_inicio(page: ft.Page, cambiar_pantalla):
                         border=ft.border.all(1), border_radius=ft.border_radius.all(8),
                         alignment=ft.alignment.center
                     ),
-                    ft.Text(cat["nombre"], size=12, text_align=ft.TextAlign.CENTER)
+                    ft.Text(
+                        cat["nombre"],
+                        size=12,
+                        text_align=ft.TextAlign.CENTER,
+                        max_lines=3,  # 👉
+                        overflow=ft.TextOverflow.ELLIPSIS,  # 👉 Si aún sobra, pone "..."
+                        width=70  # 👉 Fuerza un ancho fijo para que haga el salto de línea
+                    )
                 ],
                 horizontal_alignment=ft.CrossAxisAlignment.CENTER
             )
@@ -229,18 +365,33 @@ def pantalla_inicio(page: ft.Page, cambiar_pantalla):
         for cat in categorias
     ]
 
-    categorias_scroll = ft.Row(
+    categorias_scroll = ft.ListView(
         controls=cat_items,
-        scroll=ft.ScrollMode.HIDDEN,
-        spacing=12,
+        horizontal=True,
+        spacing=CAT_SPACING,  # usa la constante
         expand=False,
-        vertical_alignment=ft.CrossAxisAlignment.START
+        on_scroll=_on_cat_scroll,  # <- clave para actualizar puntitos
     )
 
     categorias_container = ft.Container(
         content=categorias_scroll,
-        padding=ft.padding.symmetric(horizontal=15),
-        height=105
+        padding=ft.padding.symmetric(horizontal=8),
+        height=115,
+
+    )
+
+    # Indicadores tipo carrusel (puntitos)
+    indicadores = ft.Row(
+        controls=[],
+        alignment=ft.MainAxisAlignment.CENTER,
+        spacing=4,
+    )
+
+    indicadores_container = ft.Container(
+        content=indicadores,
+        alignment=ft.alignment.center,
+        padding=ft.padding.only(top=4),
+        visible=False  # se muestra sólo si hay más de 1 página
     )
 
     # ---------------- FUNCIÓN TARJETA (ESTILO VERTICAL) ----------------
@@ -323,7 +474,7 @@ def pantalla_inicio(page: ft.Page, cambiar_pantalla):
         )
 
         return ft.Container(
-            width=180,
+            width=179,
             height=270,
             padding=8,
             bgcolor="white",
@@ -364,8 +515,8 @@ def pantalla_inicio(page: ft.Page, cambiar_pantalla):
             ft.Container(content=ft.Text("Te podría interesar", size=22, weight=ft.FontWeight.BOLD, color=TEXT_COLOR),
                          alignment=ft.alignment.center, padding=ft.padding.only(bottom=5, top=15)),
             ft.Container(content=ft.Row(controls=[tarjeta_horizontal(**p) for p in aleatorias],
-                                        spacing=15, scroll=ft.ScrollMode.HIDDEN),
-                         padding=ft.padding.symmetric(horizontal=15))
+                                        spacing=7, scroll=ft.ScrollMode.HIDDEN),
+                         padding=ft.padding.symmetric(horizontal=6))
         ]
     )
 
@@ -374,7 +525,7 @@ def pantalla_inicio(page: ft.Page, cambiar_pantalla):
         bgcolor="#F8F8F8",
         border_radius=10,
         padding=20,
-        margin=ft.margin.symmetric(horizontal=15, vertical=20),
+        margin=ft.margin.symmetric(horizontal=8, vertical=20),
         visible= not usuario_autenticado,
         content=ft.Column(
             [
@@ -422,8 +573,8 @@ def pantalla_inicio(page: ft.Page, cambiar_pantalla):
             ft.Container(content=ft.Text("Servicios destacados", size=22, weight=ft.FontWeight.BOLD, color=TEXT_COLOR),
                          alignment=ft.alignment.center, padding=ft.padding.only(bottom=5, top=15)),
             ft.Container(content=ft.Column(controls=[
-                ft.Row(controls=[tarjeta_horizontal(**p) for p in recientes], spacing=15, scroll=ft.ScrollMode.HIDDEN),
-            ], spacing=20), padding=ft.padding.symmetric(horizontal=15))
+                ft.Row(controls=[tarjeta_horizontal(**p) for p in recientes], spacing=7, scroll=ft.ScrollMode.HIDDEN),
+            ], spacing=20), padding=ft.padding.symmetric(horizontal=6))
         ]
     )
 
@@ -463,6 +614,7 @@ def pantalla_inicio(page: ft.Page, cambiar_pantalla):
                         contenedor_frase,
                         categorias_titulo,
                         categorias_container,
+                        indicadores_container,
                         publicaciones_container,
                         crear_cuenta_container,
                         destacados_container,
@@ -478,6 +630,7 @@ def pantalla_inicio(page: ft.Page, cambiar_pantalla):
 
     # Agregar layout a la página
     page.add(layout)
+    _config_pagination()
 
     # ---------------- NAV INFERIOR (BottomAppBar) ----------------
     page.bottom_appbar = ft.BottomAppBar(
@@ -490,6 +643,7 @@ def pantalla_inicio(page: ft.Page, cambiar_pantalla):
     def on_resize(e):
         # 🔹 Ajusta el navbar superior al cambiar el tamaño de la pantalla
         layout.controls[0] = nav_bar(page.width, ft.Ref[ft.Container]())
+        _config_pagination()
         page.update()
 
     if not usuario_autenticado:

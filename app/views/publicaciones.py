@@ -498,7 +498,7 @@ def publicaciones(page: ft.Page, cambiar_pantalla, origen=None):
         )
 
         return ft.Container(
-            width=180,
+            width=179,
             height=270,
             padding=8,
             bgcolor="white",
