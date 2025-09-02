@@ -59,4 +59,4 @@ def main(page: ft.Page):
 
 
 if __name__ == "__main__":
-    ft.app(target=main, view=ft.AppView.WEB_BROWSER,host="192.168.1.38",port=8551)
+    ft.app(target=main, view=ft.AppView.WEB_BROWSER)
