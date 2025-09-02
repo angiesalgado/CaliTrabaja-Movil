@@ -1,14 +1,27 @@
 # app/components/MenuOpciones.py
 import flet as ft
 from flet import Icons
+from app.API_services.guardar_publicacion import guardar_publicacion
+from app.API_services.guardar_reporte import enviar_reporte
 
 
-def menu_opciones(page, modal_reporte, text_color="#000000", incluir_guardar=True):
+def menu_opciones(page, modal_reporte, text_color="#000000", incluir_guardar=None, incluir_reporte=None,  publicacion_id=None, usuario_id=None):
 
     items = []
 
+    def  obtener_token(page):
+        return getattr(page, "session_token", None)
+
+    token = obtener_token(page)
+    datos={}
+
+    if publicacion_id:
+        datos["publicacion_id"] = publicacion_id
+
+
+
     # Opción Guardar
-    if incluir_guardar:
+    if incluir_guardar ==True:
         items.append(
             ft.PopupMenuItem(
                 content=ft.Row(
@@ -19,24 +32,41 @@ def menu_opciones(page, modal_reporte, text_color="#000000", incluir_guardar=Tru
                     spacing=6,
                     alignment="start",
                 ),
-                on_click=lambda e: print("Guardar"),
+                on_click=lambda e: guardar_publicacion(token, datos)
             )
         )
+    # Función para reportar
+    def reportar():
+        def guardar_reporte(descripcion):
+            token = obtener_token(page)
+            datos_reporte = {
+                "descripcion": descripcion,
+                "reportado_id": usuario_id,
+            }
+            if token:
+                enviar_reporte(token, datos_reporte)
+            else:
+                print("Debes iniciar sesión")
 
-    # Opción Reportar
-    items.append(
-        ft.PopupMenuItem(
-            content=ft.Row(
-                [
-                    ft.Icon(Icons.ERROR_OUTLINE, size=16, color=text_color),
-                    ft.Text("Reportar", color=text_color),
-                ],
-                spacing=8,
-                alignment="start",
-            ),
-            on_click=lambda e: modal_reporte.show(page),
+        modal_reporte.on_guardar = guardar_reporte
+        modal_reporte.show(page)
+
+
+    if incluir_reporte:
+        # Opción Reportar
+        items.append(
+            ft.PopupMenuItem(
+                content=ft.Row(
+                    [
+                        ft.Icon(Icons.ERROR_OUTLINE, size=16, color=text_color),
+                        ft.Text("Reportar", color=text_color),
+                    ],
+                    spacing=8,
+                    alignment="start",
+                ),
+                on_click=lambda e: reportar(),
+            )
         )
-    )
 
     return ft.Container(
         content=ft.PopupMenuButton(

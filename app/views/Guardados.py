@@ -2,7 +2,8 @@ import flet as ft
 from app.components.menu_inferior import menu_inferior
 from app.components.ModalReporte import ModalReporte
 from app.components.MenuTarjetasOpciones import menu_opciones
-
+from app.API_services.traer_guardados import traer_guardados
+from app.API_services.eliminar_guardado import eliminar_guardado_usuario
 
 # ---------- NAV SUPERIOR ----------
 def nav_superior(page_width: float, titulo="Título", on_back_click=lambda e: None):
@@ -43,6 +44,8 @@ def nav_superior(page_width: float, titulo="Título", on_back_click=lambda e: No
 
 
 
+
+
 # ---------- VISTA GUARDADOS ----------
 def render_guardados(page: ft.Page, cambiar_pantalla=None):
     page.clean()
@@ -62,14 +65,93 @@ def render_guardados(page: ft.Page, cambiar_pantalla=None):
     if modal_reporte.dialog not in page.overlay:
         page.overlay.append(modal_reporte.dialog)
 
+    def obtener_token(page):
+        return getattr(page, "session_token", None)
+
+    def obtener_guardados():
+        token = obtener_token(page)
+        if not token:
+            print("Inicia sesion o registrate")
+
+        respuesta = traer_guardados(token)
+
+        if not respuesta.get("success"):
+            print("Error al traer guardados:", respuesta.get("message"))
+            return []
+
+        guardados = respuesta.get("data", [])
+
+        lista = []
+
+        for g in guardados:
+            pub = g.get("publicacion", {})
+            lista.append({
+                "guardado_id": g.get("guardado_id"),
+                "fecha_guardado": g.get("fecha_guardado"),
+                "publicacion_id": pub.get("publicacion_id"),
+                "nombre_experto": pub.get("nombre_experto"),
+                "usuario_id": pub.get("usuario_id"),
+                "categoria": pub.get("categoria"),
+                "subcategoria": pub.get("subcategoria"),
+                "descripcion": pub.get("descripcion"),
+                "costo": pub.get("costo"),
+                "calificacion": pub.get("calificacion"),
+            })
+        return lista
+
+
+
+    # ---------- Contenedor de cards dinámico ----------
+    cards = ft.Column(expand=True, spacing=0)
+
+    def recargar_guardados():
+        cards.controls.clear()
+        nuevos_guardados = obtener_guardados()
+        for g in nuevos_guardados:
+            cards.controls.append(
+                saved_card(
+                    g.get("publicacion_id"),
+                    g.get("usuario_id"),
+                    g.get("nombre_experto", "Sin nombre"),
+                    g.get("categoria", "Sin categoría"),
+                    g.get("subcategoria", "Sin subcategoría"),
+                    f"COP {g.get('costo')}" if g.get("costo") else "Precio no disponible",
+                    g.get("descripcion", "Sin descripción"),
+
+                )
+            )
+        page.update()
+
+
+
+    def eliminar_guardado(page, publicacion_id):
+        token = obtener_token(page)
+
+        if not token:
+            print("Inicia sesion o registrate")
+
+        datos ={}
+
+        if publicacion_id:
+            datos["publicacion_id"] = publicacion_id
+
+        respuesta = eliminar_guardado_usuario(token, datos)
+
+        if respuesta.get("success"):
+            print("Guardado eliminado")
+            recargar_guardados()
+
+
     # ---------- Card factory ----------
-    def saved_card(nombre, categoria, subcategoria, precio, descripcion):
+    def saved_card(publicacion_id, usuario_id, nombre, categoria, subcategoria, precio, descripcion):
+
+
         if len(descripcion) > 300:
             descripcion = descripcion[:300] + "..."
 
         # Menú solo con Reportar (sin opción Guardar)
         menu_solo_reportar = menu_opciones(
-            page, modal_reporte, text_color="black", incluir_guardar=False
+            page, modal_reporte, text_color="black", incluir_guardar=False, usuario_id=usuario_id
         )
 
         return ft.Container(
@@ -95,7 +177,7 @@ def render_guardados(page: ft.Page, cambiar_pantalla=None):
                                                         icon=ft.Icons.DELETE_OUTLINE,  # Icono de bote de basura
                                                         icon_color="#3EAEB1",
                                                         icon_size=24,
-                                                        on_click=lambda e: None  # solo visual
+                                                        on_click=lambda e: eliminar_guardado(page,publicacion_id)  # solo visual
                                                     ),
                                                 ],
                                                 spacing=8,
@@ -147,30 +229,9 @@ def render_guardados(page: ft.Page, cambiar_pantalla=None):
             margin=ft.margin.only(left=5, right=5),
         )
 
-    # ---------- Example cards ----------
-    cards = ft.Column(
-        [
-            saved_card(
-                "Nestor Martinez",
-                "Educación",
-                "Tutorías en línea",
-                "COP 30.000/h",
-                "Este servicio de limpieza es ideal para mantener tu hogar u oficina impecable."
-            ),
-            saved_card(
-                "Nestor Martinez",
-                "Educación",
-                "Tutorías en línea",
-                "COP 30.000/h",
-                "La organización de tu hogar o espacio de trabajo puede influir directamente en tu bienestar y productividad diaria."
-            ),
-        ],
-        expand=True,
-        spacing=0,
-    )
 
-    def obtener_token(page):
-        return getattr(page, "session_token", None)
+
+
 
     # ---------- Navegación inferior ----------
     def on_bottom_nav_click(index):
@@ -191,11 +252,8 @@ def render_guardados(page: ft.Page, cambiar_pantalla=None):
             else:
                 print("Inicia sesion o registrate")
         elif index == 4:  # Menú
-            token = obtener_token(page)
-            if token:
                 cambiar_pantalla("menu")
-            else:
-                print("Inicia sesion o registrate")
+
 
     # Barra inferior
     page.bottom_appbar = ft.BottomAppBar(
@@ -218,4 +276,5 @@ def render_guardados(page: ft.Page, cambiar_pantalla=None):
             expand=True,
         )
     )
+    recargar_guardados()
     page.update()  #  aseguramos refresco de toda la UI

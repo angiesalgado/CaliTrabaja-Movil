@@ -5,6 +5,7 @@ from app.components.nav import nav_bar
 from app.components.menu_inferior import menu_inferior
 from app.components.ModalTarjetaCompleta import ModalTarjetaCompleta
 from app.components.MenuTarjetasOpciones import menu_opciones
+from app.API_services.traer_publicaciones import traer_publicaciones_usu
 
 def custom_expansion(page, title, controls_list):
     toggle_icon = ft.Icon(name=ft.Icons.KEYBOARD_ARROW_DOWN, color="#3EAEB1")
@@ -25,6 +26,8 @@ def custom_expansion(page, title, controls_list):
         styled_controls.append(control)
 
     content_column = ft.Column(styled_controls, visible=False, spacing=5)
+
+
 
     def toggle_visibility(e):
         content_column.visible = not content_column.visible
@@ -73,6 +76,68 @@ def publicaciones(page: ft.Page, cambiar_pantalla, origen=None):
     TEXT_COLOR = "#000000"
     BORDER_COLOR = "#D9D9D9"
 
+    #---------------------------------------------
+
+
+
+    #------------------------------------------------------------------------------
+
+    def obtener_token(page):
+        return getattr(page, "session_token", None)
+
+    def obtener_publicaciones(categoria_id=None, subcategoria_id=None, tiempo=None):
+
+        datos = {}
+        if categoria_id and categoria_id !="Todas":
+            datos["categoria_id"] = categoria_id
+
+        if subcategoria_id:
+            datos["subcategoria_id"] = subcategoria_id
+
+        if tiempo and tiempo !="Todas":
+            datos["tiempo"] = tiempo
+
+        publicaciones = traer_publicaciones_usu(datos)
+
+        print(publicaciones)
+
+        lista = []
+
+        # Solo recorro la parte de publicaciones_generales
+        for pub in publicaciones.get("publicaciones_generales", []):
+            lista.append({
+                "nombre": pub.get("nombre_experto"),
+                "profesion": pub.get("subcategoria"),
+                "descripcion": pub.get("descripcion"),
+                "costo": pub.get("costo"),
+                "usuario_id":pub.get("usuario_id"),
+                "publicacion_id":pub.get("publicacion_id")
+            })
+
+        # Devuelvo lo que necesites
+        return {
+            "lista": lista,
+            "categorias": publicaciones.get("categorias", []),
+            "total_resultados": publicaciones.get("total_resultados", 0),
+            "categoria_seleccionada": publicaciones.get("categoria_selecionada")
+        }
+
+    # Si se pasó un filtro desde inicio
+    if origen and "categoria_id" in origen:
+        cat_id = origen["categoria_id"]
+        resultado = obtener_publicaciones(categoria_id=cat_id)
+    else:
+        resultado = obtener_publicaciones()
+
+    publicaciones_filtradas = resultado["lista"]
+
+
+
+
+    # ---------------- REFERENCIAS PARA FILTROS ----------------
+    categoria_ref = ft.Ref[ft.RadioGroup]()
+    fecha_ref = ft.Ref[ft.RadioGroup]()
+
     # ---------------- INSTANCIA DEL MODAL ----------------
     modal_reporte = ModalReporte()
     page.overlay.append(modal_reporte.dialog)
@@ -96,7 +161,78 @@ def publicaciones(page: ft.Page, cambiar_pantalla, origen=None):
         on_click=lambda e: cerrar_filtros(),
     )
 
-    # ---------------- PANEL FILTROS (oculto al inicio) ----------------
+
+
+
+    # ---------------- FUNCIONES PANEL ----------------
+
+    def aplicar_filtros(e):
+        categoria = categorias.value
+        fecha = fechas.value
+        print(f"Categoria seleccionada: {categoria}, fecha seleccionada: {fecha}")
+
+        filtrar_publicaciones = obtener_publicaciones(categoria_id=categoria, subcategoria_id=None, tiempo=fecha)
+
+
+        publicaciones_filtradas = filtrar_publicaciones["lista"]
+        total_filtradas = len(publicaciones_filtradas)
+        print(f"Publicaciones filtradas: {publicaciones_filtradas}")
+
+        # 🔹 reconstruir el contenido del grid_column
+        grid_column.controls.clear()
+        for i in range(0, len(publicaciones_filtradas), 2):
+            fila = ft.Container(
+                content=ft.Row(
+                    controls=[tarjeta_horizontal(**publicaciones_filtradas[i])] +
+                             ([tarjeta_horizontal(**publicaciones_filtradas[i + 1])]
+                              if i + 1 < len(publicaciones_filtradas) else []),
+                    spacing=7,
+                    alignment=ft.MainAxisAlignment.START
+                ),
+                padding=ft.padding.symmetric(horizontal=5)
+            )
+            grid_column.controls.append(fila)
+        # 🔹 actualizar el número de resultados dinámicamente
+        resultado_texto.value = f"{total_filtradas} resultados"
+
+        page.update()
+        cerrar_filtros()
+
+    # ---------------- RADIOGROUPS PARA FILTROS ----------------
+
+
+    categorias = ft.RadioGroup(
+        ref=categoria_ref,
+        content=ft.Column(
+            [
+                ft.Radio(value="Todas", label="Todas"),
+                ft.Radio(value="1", label="Reparación y Mantenimiento"),
+                ft.Radio(value="2", label="Cuidado y Asistencia"),
+                ft.Radio(value="3", label="Bienestar de Mascotas"),
+                ft.Radio(value="4", label="Educativos y aprendizaje"),
+                ft.Radio(value="5", label="Hogar y Limpieza"),
+                ft.Radio(value="6", label="Construcción y Remodelación"),
+                ft.Radio(value="7", label="Artísticos y creatividad visual"),
+                ft.Radio(value="8", label="Movilidad y transporte"),
+                ft.Radio(value="9", label="Gastronomía"),
+                ft.Radio(value="10", label="Eventos"),
+                ft.Radio(value="11", label="Bienestar Personal"),
+            ]
+        )
+    )
+
+    fechas = ft.RadioGroup(
+        ref=fecha_ref,
+        content=ft.Column(
+            [
+                ft.Radio(value="Todas", label="Todas"),
+                ft.Radio(value="24h", label="Últimas 24 horas"),
+                ft.Radio(value="semana", label="Esta semana"),
+                ft.Radio(value="mes", label="Este mes"),
+            ],
+            spacing=5
+        )
+    )
     filtros_panel = ft.Container(
         bgcolor="white",
         width=250,
@@ -108,6 +244,7 @@ def publicaciones(page: ft.Page, cambiar_pantalla, origen=None):
         content=ft.Column(
             [
 
+                # HEADER DEL PANEL
                 ft.Container(
                     bgcolor="#F8F8F8",
                     padding=ft.padding.symmetric(horizontal=15, vertical=10),
@@ -116,13 +253,13 @@ def publicaciones(page: ft.Page, cambiar_pantalla, origen=None):
                             ft.IconButton(
                                 ft.Icons.ARROW_BACK,
                                 on_click=lambda e: cerrar_filtros(),
-                                icon_color="#3EAEB1",  # Color de la flecha
+                                icon_color="#3EAEB1",
                             ),
                             ft.Text(
                                 "Filtrar",
                                 size=20,
-                                weight=ft.FontWeight.W_500, # Medium
-                                font_family="Oswald",  # Fuente Oswald
+                                weight=ft.FontWeight.W_500,
+                                font_family="Oswald",
                                 color="black"
                             ),
                         ],
@@ -130,74 +267,24 @@ def publicaciones(page: ft.Page, cambiar_pantalla, origen=None):
                     ),
                 ),
 
-
+                # CUERPO DEL PANEL
                 ft.Container(
                     expand=True,
                     padding=ft.padding.all(15),
                     content=ft.Column(
                         [
-                            custom_expansion(
-                                page,
-                                "Categorías",
-                                [
-                                    ft.Radio(value="todas", label="Todas"),
-                                    ft.Radio(value="cat1", label="Categoría 1"),
-                                    ft.Radio(value="cat2", label="Categoría 2"),
-                                ]
-                            ),
 
-                            custom_expansion(
-                                page,
-                                "Subcategorías",
-                                [
-                                    ft.Checkbox(label="SubCategoría 1"),
-                                    ft.Checkbox(label="SubCategoría 2"),
-                                ]
-                            ),
+                            # Categorías
+                            custom_expansion(page, "Categorías", [categorias]),
 
+                            # Fecha de publicación
                             ft.Text(
                                 "Fecha de publicación",
                                 size=16,
                                 weight=ft.FontWeight.W_500,
                                 color="black"
                             ),
-                            ft.Column(
-                                [
-                                    ft.Radio(
-                                        value="todos",
-                                        label="Todos",
-                                        label_style=ft.TextStyle(
-                                            color="#666666",
-                                            weight=ft.FontWeight.W_500
-                                        )
-                                    ),
-                                    ft.Radio(
-                                        value="24h",
-                                        label="Últimas 24 horas",
-                                        label_style=ft.TextStyle(
-                                            color="#666666",
-                                            weight=ft.FontWeight.W_500
-                                        )
-                                    ),
-                                    ft.Radio(
-                                        value="semana",
-                                        label="Esta semana",
-                                        label_style=ft.TextStyle(
-                                            color="#666666",
-                                            weight=ft.FontWeight.W_500
-                                        )
-                                    ),
-                                    ft.Radio(
-                                        value="mes",
-                                        label="Este mes",
-                                        label_style=ft.TextStyle(
-                                            color="#666666",
-                                            weight=ft.FontWeight.W_500
-                                        )
-                                    ),
-                                ],
-                                spacing=5
-                            )
+                            fechas
 
                         ],
                         spacing=12,
@@ -205,6 +292,7 @@ def publicaciones(page: ft.Page, cambiar_pantalla, origen=None):
                     )
                 ),
 
+                # BOTONES
                 ft.Container(
                     content=ft.Row(
                         [
@@ -218,7 +306,7 @@ def publicaciones(page: ft.Page, cambiar_pantalla, origen=None):
                                     shape=ft.RoundedRectangleBorder(radius=30),
                                     padding=8
                                 ),
-                                on_click=lambda e: cerrar_filtros()
+                                on_click=aplicar_filtros
                             ),
                             ft.OutlinedButton(
                                 "Limpiar filtros",
@@ -229,7 +317,12 @@ def publicaciones(page: ft.Page, cambiar_pantalla, origen=None):
                                     padding=8,
                                     color="black"
                                 ),
-                                on_click=lambda e: print("Filtros limpiados")
+                                on_click=lambda e: (
+                                    setattr(categorias, "value", None),
+                                    setattr(fechas, "value", None),
+                                    page.update(),
+                                    print("Filtros limpiados")
+                                )
                             ),
                         ],
                         alignment=ft.MainAxisAlignment.CENTER,
@@ -243,7 +336,21 @@ def publicaciones(page: ft.Page, cambiar_pantalla, origen=None):
         )
     )
 
-    # ---------------- FUNCIONES PANEL ----------------
+
+
+
+        #custom_expansion(
+        #   page,
+        #"Subcategorías",
+        # [
+        #    ft.Checkbox(label="SubCategoría 1"),
+        #   ft.Checkbox(label="SubCategoría 2"),
+        #]
+        #),
+
+
+
+
     def abrir_filtros(e=None):
         filtros_panel.right = page.width - 250
         overlay.visible = True
@@ -253,6 +360,15 @@ def publicaciones(page: ft.Page, cambiar_pantalla, origen=None):
         filtros_panel.right = page.width  # vuelve a salir
         overlay.visible = False
         page.update()
+
+    # ---------------- ENCABEZADO RESULTADOS ----------------
+    resultado_texto = ft.Text(
+        f"{len(publicaciones_filtradas)} resultados",
+        weight=ft.FontWeight.BOLD,
+        size=14,
+        color="#666666"
+    )
+
     # ---------------- ENCABEZADO RESULTADOS ----------------
     header_resultados = ft.Container(
         content=ft.Column(
@@ -266,12 +382,7 @@ def publicaciones(page: ft.Page, cambiar_pantalla, origen=None):
                     ),
                     on_click=abrir_filtros
                 ),
-                ft.Text(
-                    "124 resultados",
-                    weight=ft.FontWeight.BOLD,
-                    size=14,
-                    color="#666666"
-                ),
+                resultado_texto,
             ],
             spacing=8,
             alignment=ft.MainAxisAlignment.START,
@@ -314,8 +425,10 @@ def publicaciones(page: ft.Page, cambiar_pantalla, origen=None):
         margin=ft.margin.all(8)
     )
 
+
+
     # ---------------- FUNCIÓN TARJETAS ----------------
-    def tarjeta_horizontal(nombre, profesion, descripcion, costo, calificacion=4):
+    def tarjeta_horizontal(nombre, profesion, descripcion, costo, usuario_id, publicacion_id, calificacion=4):
         mostrar_boton = len(descripcion) > 70
 
         stars = ft.Row(
@@ -324,9 +437,15 @@ def publicaciones(page: ft.Page, cambiar_pantalla, origen=None):
             spacing=0,
             alignment=ft.MainAxisAlignment.CENTER
         )
+        token = obtener_token(page)
 
-        # Menú con Guardar + Reportar
-        menu = menu_opciones(page, modal_reporte, text_color=TEXT_COLOR, incluir_guardar=True)
+        if token == None:
+            menu = menu_opciones(page, modal_reporte, incluir_guardar=False, incluir_reporte=False)
+            print("Debes iniciar sesion o registrarte GUARDAR")
+
+        else:
+            # Menú con Guardar + Reportar
+            menu = menu_opciones(page, modal_reporte, text_color=TEXT_COLOR, incluir_guardar=True, incluir_reporte=True,  usuario_id=usuario_id, publicacion_id=publicacion_id)
 
         # Contenido principal
         tarjeta_contenido = ft.Container(
@@ -397,29 +516,35 @@ def publicaciones(page: ft.Page, cambiar_pantalla, origen=None):
             )
         )
 
-    # ---------------- PUBLICACIONES ----------------
-    publicaciones = [
-        {"nombre": "Claudia Henao", "profesion": "Fotógrafa", "descripcion": "Creatividad, técnica y detalle y muchas cosas mas que quiero poner aqui .", "costo": "30.000", "calificacion": 4},
-        {"nombre": "Carlos Restrepo", "profesion": "Electricista", "descripcion": "Instalaciones seguras y rápidas.", "costo": "55.000", "calificacion": 5},
-        {"nombre": "Roberto Gómez", "profesion": "Plomero", "descripcion": "Reparaciones de fugas y mantenimiento.", "costo": "50.000", "calificacion": 3},
-        {"nombre": "Andrea López", "profesion": "Diseñadora", "descripcion": "Diseños creativos e innovadores.", "costo": "40.000", "calificacion": 4},
-        {"nombre": "María Torres", "profesion": "Chef Personal", "descripcion": "Cocina gourmet en tu casa.", "costo": "80.000", "calificacion": 5},
-        {"nombre": "Juan Pérez", "profesion": "Entrenador Personal", "descripcion": "Rutinas adaptadas a tus objetivos.", "costo": "60.000", "calificacion": 5},
-    ]
+
+
 
     # ---------------- GRID 2x2 ----------------
     filas = []
+
+    grid_column = ft.Column(
+        filas,
+        spacing=7,
+        horizontal_alignment=ft.CrossAxisAlignment.CENTER
+    )
+
+    grid_column.controls.clear()
+    # 🔹 Llenar el grid con todas las publicaciones al inicio
+    publicaciones = publicaciones_filtradas
+
     for i in range(0, len(publicaciones), 2):
         fila = ft.Container(
             content=ft.Row(
                 controls=[tarjeta_horizontal(**publicaciones[i])] +
-                         ([tarjeta_horizontal(**publicaciones[i + 1])] if i + 1 < len(publicaciones) else []),
+                         ([tarjeta_horizontal(**publicaciones[i + 1])]
+                          if i + 1 < len(publicaciones) else []),
                 spacing=7,
-                alignment=ft.MainAxisAlignment.START  #  evita que se estiren de borde a borde
+                alignment=ft.MainAxisAlignment.START
             ),
-            padding=ft.padding.symmetric(horizontal=5)  #  mismo margen lateral que arriba
+            padding=ft.padding.symmetric(horizontal=5)
         )
-        filas.append(fila)
+        grid_column.controls.append(fila)
+
 
 
     # Aquí organizamos a que interfaz devuelve dependiendo de dónde vino
@@ -441,7 +566,7 @@ def publicaciones(page: ft.Page, cambiar_pantalla, origen=None):
                         [
                             header_resultados,
                             ft.Column([paginacion], alignment=ft.MainAxisAlignment.CENTER, spacing=1),
-                            ft.Column(filas, spacing=7, horizontal_alignment=ft.CrossAxisAlignment.CENTER)
+                            grid_column
                         ],
                         spacing=10,
                         horizontal_alignment=ft.CrossAxisAlignment.CENTER
@@ -464,11 +589,20 @@ def publicaciones(page: ft.Page, cambiar_pantalla, origen=None):
         elif index == 1:  # Categorias
             cambiar_pantalla("categorias")
         elif index == 2:  # Mensajes
-            cambiar_pantalla("mensajes")
+            token = obtener_token(page)
+            if token:
+                cambiar_pantalla("mensajes")
+            else:
+                print("Inicia sesion o registrate")
         elif index == 3:  # Guardados
-            cambiar_pantalla("guardados")
+            token = obtener_token(page)
+            if token:
+                cambiar_pantalla("guardados")
+            else:
+                print("Inicia sesion o registrate")
         elif index == 4:  # Menú
-            cambiar_pantalla("menu")
+                cambiar_pantalla("menu")
+
 
     menu = menu_inferior(selected_index, on_bottom_nav_click)
 

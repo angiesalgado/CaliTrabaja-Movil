@@ -34,6 +34,47 @@ def pantalla_registro(page: ft.Page, cambiar_pantalla, origen=None):
     def validar_email(email):
         return "@" in email and "." in email
 
+    # --- VALIDACIONES DE CONTRASEÑA ---
+    regla_6_icon = ft.Icon(name=ft.Icons.HIGHLIGHT_OFF, color="red", size=18)
+    regla_6_text = ft.Text("Al menos 6 caracteres", size=14)
+
+    regla_mayus_icon = ft.Icon(name=ft.Icons.HIGHLIGHT_OFF, color="red", size=18)
+    regla_mayus_text = ft.Text("Al menos 1 letra mayúscula", size=14)
+
+    reglas_columna = ft.Column(
+        spacing=5,
+        alignment=ft.MainAxisAlignment.START,
+        horizontal_alignment=ft.CrossAxisAlignment.START,
+        controls=[
+            ft.Row([regla_6_icon, regla_6_text], alignment=ft.MainAxisAlignment.START),
+            ft.Row([regla_mayus_icon, regla_mayus_text], alignment=ft.MainAxisAlignment.START),
+        ]
+    )
+
+    def validar_password(e=None):
+        pwd = password_field.value or ""
+
+        # Validar longitud
+        if len(pwd) >= 6:
+            regla_6_icon.name = ft.Icons.CHECK_CIRCLE
+            regla_6_icon.color = "green"
+        else:
+            regla_6_icon.name = ft.Icons.HIGHLIGHT_OFF
+            regla_6_icon.color = "red"
+
+        # Validar mayúscula
+        if re.search(r"[A-Z]", pwd):
+            regla_mayus_icon.name = ft.Icons.CHECK_CIRCLE
+            regla_mayus_icon.color = "green"
+        else:
+            regla_mayus_icon.name = ft.Icons.HIGHLIGHT_OFF
+            regla_mayus_icon.color = "red"
+
+        page.update()
+
+    # Escuchar cambios en el campo contraseña
+    password_field.on_change = validar_password
+
     def registrarse(e):
         if not all([nombre_field.value, apellido_field.value, email_field.value, password_field.value, confirm_field.value]):
             message_text.value = "Por favor, complete todos los campos."
@@ -115,7 +156,9 @@ def pantalla_registro(page: ft.Page, cambiar_pantalla, origen=None):
                             icon_text("person", nombre_field),
                             icon_text("person", apellido_field),
                             icon_text("alternate_email", email_field),
+                            # --- Contraseña ---
                             icon_text("lock", password_field),
+                            reglas_columna,
                             icon_text("lock", confirm_field),
                             message_text,
                             # --- BOTÓN REGISTRO ---

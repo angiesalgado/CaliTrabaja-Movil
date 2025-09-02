@@ -91,8 +91,7 @@ class ModalReporte:
 
     def guardar(self, e):
         if self.on_guardar:
-
-            self.on_guardar(self.descripcion.content.value)
+            self.on_guardar(self.descripcion.value)
         self.dialog.open = False
         e.page.update()
 
@@ -103,6 +102,7 @@ class ModalReporte:
         e.page.update()
 
     def show(self, page):
+        self.descripcion.value =""
         page.dialog = self.dialog
         self.dialog.open = True
         page.update()

@@ -35,11 +35,8 @@ def pantalla_mensajes(page: ft.Page, cambiar_pantalla):
             else:
                 print("Inicia sesion o registrate")
         elif index == 4:  # Menú
-            token = obtener_token(page)
-            if token:
                 cambiar_pantalla("menu")
-            else:
-                print("Inicia sesion o registrate")
+
 
     # ---------- NAV SUPERIOR ----------
     nav = nav_bar(

@@ -10,6 +10,7 @@ from app.components.menu_inferior import menu_inferior
 from app.components.ModalReporte import ModalReporte
 from app.components.ModalTarjetaCompleta import ModalTarjetaCompleta
 from app.components.MenuTarjetasOpciones import menu_opciones
+from app.API_services.traer_publicaciones import traer_publicaciones_usu
 
 
 def pantalla_inicio(page: ft.Page, cambiar_pantalla):
@@ -52,13 +53,17 @@ def pantalla_inicio(page: ft.Page, cambiar_pantalla):
         modal_detalle.dialog.open = True
         page.update()
 
+    token = obtener_token(page)
+    usuario_autenticado = token is not None
+
+
     # ---------------- NAV SUPERIOR ----------------
     nav = nav_bar(
         page,
         page.width,
         show_back=False,  # 👉 en Inicio NO aparece la flecha
         show_explora=False,  # 👉 en Inicio NO aparece "Explora en"
-        show_login_icon=True,
+        show_login_icon=not usuario_autenticado,
         on_login_click=lambda e: cambiar_pantalla("login")  # 👈 acción del botón
     )
 
@@ -162,29 +167,64 @@ def pantalla_inicio(page: ft.Page, cambiar_pantalla):
 
 
     categorias = [
-        {"nombre": "Categoría 1", "icono": "tecnico.svg"},
-        {"nombre": "Categoría 2", "icono": "cuidado.svg"},
-        {"nombre": "Categoría 3", "icono": "mascoteros.svg"},
-        {"nombre": "Categoría 4", "icono": "educativos.svg"},
-        {"nombre": "Categoría 5", "icono": "limpieza.svg"},
-        {"nombre": "Categoría 6", "icono": "construccion.png"},
-        {"nombre": "Categoría 7", "icono": "artisticos.svg"},
-        {"nombre": "Categoría 8", "icono": "transporte.svg"},
-        {"nombre": "Categoría 9", "icono": "culinarios.svg"},
-        {"nombre": "Categoría 10", "icono": "salud_bien.svg"},
-        {"nombre": "Categoría 11", "icono": "eventos.svg"}
+        {"nombre": "Reparación y Mantenimiento", "icono": "tecnico.svg", "id":1},
+        {"nombre": "Cuidado y Asistencia", "icono": "cuidado.svg", "id":2},
+        {"nombre": "Bienestar de Mascotas", "icono": "mascoteros.svg", "id":3},
+        {"nombre": "Educativos y aprendizaje", "icono": "educativos.svg", "id":4},
+        {"nombre": "Hogar y Limpieza", "icono": "limpieza.svg", "id":5},
+        {"nombre": "Construcción y Remodelación", "icono": "construccion.png", "id":6},
+        {"nombre": "Artísticos y creatividad visual", "icono": "artisticos.svg", "id":7},
+        {"nombre": "Movilidad y transporte", "icono": "transporte.svg", "id":8},
+        {"nombre": "Gastronomía", "icono": "culinarios.svg", "id":9},
+        {"nombre": "Eventos", "icono": "eventos.svg", "id":10},
+        {"nombre": "Bienestar Personal", "icono": "salud_bien.svg", "id":11}
+
     ]
+    def filtrar_por_categoria(cat_id):
+        print("filtrar_por_categoria", cat_id)
+
+        datos={}
+
+        if cat_id:
+            datos["categoria_id"]= cat_id
+
+        respuesta = traer_publicaciones_usu(datos)
+
+        # Extraer publicaciones de la respuesta
+        publicaciones_filtradas = respuesta.get("publicaciones_generales", [])
+
+        # Actualizar la sección de publicaciones
+        publicaciones_container.controls.clear()
+        publicaciones_container.controls.append(
+            ft.Container(
+                content=ft.Row(
+                    controls=[tarjeta_horizontal(**p) for p in publicaciones_filtradas],
+                    spacing=15,
+                    scroll=ft.ScrollMode.HIDDEN
+                ),
+                padding=ft.padding.symmetric(horizontal=15)
+            )
+        )
+
+        page.update()
+
+
 
     cat_items = [
-        ft.Column(
-            [
-                ft.Container(content=ft.Image(src=cat["icono"], width=40, height=40),
-                             width=55, height=55, bgcolor=ft.Colors.WHITE,
-                             border=ft.border.all(1), border_radius=ft.border_radius.all(8),
-                             alignment=ft.alignment.center),
-                ft.Text(cat["nombre"], size=12, text_align=ft.TextAlign.CENTER)
-            ],
-            horizontal_alignment=ft.CrossAxisAlignment.CENTER
+        ft.GestureDetector(
+            on_tap=lambda e, cat_id=cat["id"]: cambiar_pantalla("publicaciones", origen={"categoria_id": cat_id}),
+            content =ft.Column(
+                [
+                    ft.Container(
+                        content=ft.Image(src=cat["icono"], width=40, height=40),
+                        width=55, height=55, bgcolor=ft.Colors.WHITE,
+                        border=ft.border.all(1), border_radius=ft.border_radius.all(8),
+                        alignment=ft.alignment.center
+                    ),
+                    ft.Text(cat["nombre"], size=12, text_align=ft.TextAlign.CENTER)
+                ],
+                horizontal_alignment=ft.CrossAxisAlignment.CENTER
+            )
         )
         for cat in categorias
     ]
@@ -204,7 +244,7 @@ def pantalla_inicio(page: ft.Page, cambiar_pantalla):
     )
 
     # ---------------- FUNCIÓN TARJETA (ESTILO VERTICAL) ----------------
-    def tarjeta_horizontal(nombre, profesion, descripcion, costo, calificacion):
+    def tarjeta_horizontal(nombre, categoria, descripcion, costo, calificacion, publicacion_id, usuario_id):
         mostrar_boton = len(descripcion) > 70
 
         stars = ft.Row(
@@ -214,9 +254,23 @@ def pantalla_inicio(page: ft.Page, cambiar_pantalla):
             alignment=ft.MainAxisAlignment.CENTER
         )
 
+        token = obtener_token(page)
+        print(token)
 
-        # Menú con Guardar + Reportar
-        menu = menu_opciones(page, modal_reporte, text_color=TEXT_COLOR, incluir_guardar=True)
+        if token == None:
+            menu = menu_opciones(page, modal_reporte, incluir_guardar=False, incluir_reporte=False)
+            print("Debes iniciar sesion o registrarte GUARDAR")
+
+        else:
+            print(publicacion_id)
+            # Menú con Guardar + Reportar
+            menu = menu_opciones(page, modal_reporte, text_color=TEXT_COLOR, incluir_guardar=True, incluir_reporte=True, publicacion_id=publicacion_id, usuario_id=usuario_id)
+
+            print("PUBLICACION O REPORTE HECHO")
+
+
+
+
 
         # Contenido principal
         tarjeta_contenido = ft.Container(
@@ -229,7 +283,7 @@ def pantalla_inicio(page: ft.Page, cambiar_pantalla):
                     ft.Text(nombre, weight=ft.FontWeight.BOLD, size=17, color=TEXT_COLOR,
                             text_align=ft.TextAlign.CENTER),
                     stars,
-                    ft.Text(profesion, size=14, weight=ft.FontWeight.W_500, color=TEXT_COLOR,
+                    ft.Text(categoria, size=14, weight=ft.FontWeight.W_500, color=TEXT_COLOR,
                             text_align=ft.TextAlign.CENTER),
                     ft.Text("Descripción:", size=12, color=ft.Colors.BLACK54, text_align=ft.TextAlign.CENTER),
 
@@ -250,7 +304,7 @@ def pantalla_inicio(page: ft.Page, cambiar_pantalla):
                     ft.Container(
                         content=ft.TextButton(
                             "Ver más" if mostrar_boton else "",
-                            on_click=(lambda e: abrir_modal_detalle(nombre, profesion, descripcion, costo,
+                            on_click=(lambda e: abrir_modal_detalle(nombre, categoria, descripcion, costo,
                                                                     calificacion)) if mostrar_boton else None,
                             style=ft.ButtonStyle(
                                 color=PRIMARY_COLOR if mostrar_boton else "transparent",
@@ -321,6 +375,7 @@ def pantalla_inicio(page: ft.Page, cambiar_pantalla):
         border_radius=10,
         padding=20,
         margin=ft.margin.symmetric(horizontal=15, vertical=20),
+        visible= not usuario_autenticado,
         content=ft.Column(
             [
                 ft.Text(
@@ -393,11 +448,7 @@ def pantalla_inicio(page: ft.Page, cambiar_pantalla):
             else:
                 print("Inicia sesion o registrate")
         elif index == 4:  # Menú
-            token = obtener_token(page)
-            if token:
                 cambiar_pantalla("menu")
-            else:
-                print("Inicia sesion o registrate")
 
     menu = menu_inferior(selected_index, on_bottom_nav_click)
 
@@ -441,6 +492,8 @@ def pantalla_inicio(page: ft.Page, cambiar_pantalla):
         layout.controls[0] = nav_bar(page.width, ft.Ref[ft.Container]())
         page.update()
 
+    if not usuario_autenticado:
+        layout.controls[0].content.controls.insert(5, crear_cuenta_container)
     page.on_resize = on_resize
     page.update()
 

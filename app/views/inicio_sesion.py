@@ -67,13 +67,7 @@ def inicio_sesion(page: ft.Page, cambiar_pantalla):
         page.update()
 
     def olvidar_contrasena(e):
-        page.dialog = ft.AlertDialog(
-            title=ft.Text("Recuperar contraseña", weight=ft.FontWeight.BOLD),
-            content=ft.Text("Aquí iría el proceso para recuperar la contraseña."),
-            actions=[ft.TextButton("Cerrar", on_click=lambda e: page.dialog.close())]
-        )
-        page.dialog.open = True
-        page.update()
+        cambiar_pantalla("recuperar_contrasena")
 
     def crear_cuenta(e):
         cambiar_pantalla("registro")
