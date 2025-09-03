@@ -564,17 +564,30 @@ def pantalla_inicio(page: ft.Page, cambiar_pantalla):
         )
     )
 
-
-    # ---------------- SECCIÓN SERVICIOS DESTACADOS ----------------
-
-
+    # ---------------- SERVICIOS DESTACADOS ----------------
     destacados_container = ft.Column(
         [
-            ft.Container(content=ft.Text("Servicios destacados", size=22, weight=ft.FontWeight.BOLD, color=TEXT_COLOR),
-                         alignment=ft.alignment.center, padding=ft.padding.only(bottom=5, top=15)),
-            ft.Container(content=ft.Column(controls=[
-                ft.Row(controls=[tarjeta_horizontal(**p) for p in recientes], spacing=7, scroll=ft.ScrollMode.HIDDEN),
-            ], spacing=20), padding=ft.padding.symmetric(horizontal=6))
+            # Título centrado
+            ft.Container(
+                alignment=ft.alignment.center,
+                padding=ft.padding.only(top=15, bottom=0),
+                content=ft.Text("Servicios destacados", size=22, weight=ft.FontWeight.BOLD, color=TEXT_COLOR)
+            ),
+            # Texto "Desliza →" pegado a las tarjetas (debajo del título, alineado derecha)
+            ft.Container(
+                alignment=ft.alignment.center_right,
+                padding=ft.padding.only(right=15, bottom=2),
+                content=ft.Text("Desliza →", size=12, color=ft.Colors.GREY_500)
+            ),
+            # Carrusel
+            ft.Container(
+                content=ft.Row(
+                    controls=[tarjeta_horizontal(**p) for p in recientes],
+                    spacing=7,
+                    scroll=ft.ScrollMode.HIDDEN
+                ),
+                padding=ft.padding.symmetric(horizontal=6)
+            )
         ]
     )
 
