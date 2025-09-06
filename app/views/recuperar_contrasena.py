@@ -2,6 +2,8 @@
 import flet as ft
 from app.components.nav import nav_bar
 
+from app.API_services.enviar_correo_recu import enviar_correo_usu
+
 def recuperar_contrasena(page: ft.Page, cambiar_pantalla):
     page.title = "Recuperar contraseña"
     max_content_width = 600
@@ -16,11 +18,20 @@ def recuperar_contrasena(page: ft.Page, cambiar_pantalla):
     )
 
     def enviar_link(e):
+        correo = email_field.value.strip()
+        if not correo:  # Validar que no esté vacío
+            page.snack_bar = ft.SnackBar(
+                content=ft.Text("Por favor ingresa un correo válido."),
+                bgcolor="red"
+            )
         # Aquí iría la lógica para enviar enlace de recuperación
-        page.snack_bar = ft.SnackBar(
-            content=ft.Text("Se ha enviado un enlace de recuperación al correo ingresado."),
-            bgcolor="#3EAEB1"
-        )
+        else:
+            page.snack_bar = ft.SnackBar(
+                content=ft.Text("Se ha enviado un enlace de recuperación al correo ingresado."),
+                bgcolor="#3EAEB1"
+            )
+            data = {'correo': correo}
+            enviar_correo_usu(data)
         page.snack_bar.open = True
         page.update()
 

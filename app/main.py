@@ -14,7 +14,7 @@ from app.views.publicaciones import publicaciones
 from app.views.inicio_sesion import inicio_sesion
 from app.views.registrarse import pantalla_registro
 from app.views.recuperar_contrasena import recuperar_contrasena
-
+from app.views.cambiar_contrasena import cambiar_contrasena
 def main(page: ft.Page):
     page.title = "Mi App"
     page.bgcolor = "#FFFFFF"
@@ -56,10 +56,26 @@ def main(page: ft.Page):
             recuperar_contrasena(page, cambiar_pantalla)
         elif destino == "registro":
             pantalla_registro(page, cambiar_pantalla, origen=origen)
+        elif destino == "cambiar_contrasena":
+            cambiar_contrasena(page, cambiar_pantalla)
 
     #  Pantalla inicial por defecto
     pantalla_inicio(page, cambiar_pantalla)
 
+    def route_change(e: ft.RouteChangeEvent):
+        print("Ruta recibida:", page.route, page.query)
+
+        if page.route.startswith("/cambiar_contrasena"):
+            token = page.query.get("token")
+            print(f"Token recibido: {token}")  # aquí luego lo mandas a la API
+            cambiar_contrasena(page, cambiar_pantalla, token=token)
+
+    page.on_route_change = route_change
+
+    # 🔹 Iniciar en la ruta actual (por si viene de un deep link)
+    page.go(page.route)
+
+
 
 if __name__ == "__main__":
-    ft.app(target=main, view=ft.AppView.FLET_APP)
+    ft.app(target=main, view=ft.AppView.WEB_BROWSER, port=8550)

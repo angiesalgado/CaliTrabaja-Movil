@@ -2,8 +2,10 @@
 import flet as ft
 import re
 from app.components.nav import nav_bar
+from app.API_services.cambiar_contra_olvidada import cambio_contra_usu
+from . import  Inicio
 
-def cambiar_contrasena(page: ft.Page, cambiar_pantalla):
+def cambiar_contrasena(page: ft.Page, cambiar_pantalla, token=None):
     page.title = "Cambiar contraseña"
     max_content_width = 600
     campo_bgcolor = "#D9D9D9"
@@ -90,6 +92,9 @@ def cambiar_contrasena(page: ft.Page, cambiar_pantalla):
             message_text.value = "La contraseña no cumple con los requisitos."
         else:
             message_text.value = "✅ Contraseña cambiada exitosamente."
+            data={"nueva_contraseña": nueva, "confirmar_contraseña":repetir}
+            cambio_contra_usu(token, data)
+            Inicio.pantalla_inicio(page, cambiar_pantalla)
         page.update()
 
     # --- UI ---
