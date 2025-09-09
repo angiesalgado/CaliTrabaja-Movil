@@ -34,10 +34,24 @@ def pantalla_menu(page: ft.Page, cambiar_pantalla):
             items.append({"icon": "logout", "text": "Cerrar sesión"})
         return items
 
-    # ⚠️ Usa esto en vez de la lista fija
+    # Usa esto en vez de la lista fija
     side_menu_items = get_side_menu_items()
 
-
+    def mostrar_snackbar(mensaje, exito=True):
+        """Muestra SnackBar con estilo uniforme"""
+        sb = ft.SnackBar(
+            content=ft.Text(
+                mensaje,
+                color="white",
+                size=16,
+                weight=ft.FontWeight.BOLD
+            ),
+            bgcolor=ft.Colors.GREEN if exito else ft.Colors.RED,
+            duration=3000,
+        )
+        page.overlay.append(sb)
+        sb.open = True
+        page.update()
 
     def on_side_nav_click(index):
         selected_side_index.value = index
@@ -54,6 +68,8 @@ def pantalla_menu(page: ft.Page, cambiar_pantalla):
         elif item_text == "Cerrar sesión":
             cerrar_sesion_api(token)
             page.session_token = None
+            mostrar_snackbar("Sesión cerrada correctamente.", exito=True)
+            page.clean()
             Inicio.pantalla_inicio(page, cambiar_pantalla)
 
         build_side_menu()

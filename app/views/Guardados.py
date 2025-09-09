@@ -122,25 +122,40 @@ def render_guardados(page: ft.Page, cambiar_pantalla=None):
             )
         page.update()
 
-
+    def mostrar_snackbar(page, mensaje, exito=True):
+        """Muestra SnackBar con estilo uniforme"""
+        sb = ft.SnackBar(
+            content=ft.Text(
+                mensaje,
+                color="white",
+                size=16,
+                weight=ft.FontWeight.BOLD
+            ),
+            bgcolor=ft.Colors.GREEN if exito else ft.Colors.RED,
+            duration=3000,
+        )
+        page.overlay.append(sb)
+        sb.open = True
+        page.update()
 
     def eliminar_guardado(page, publicacion_id):
         token = obtener_token(page)
 
         if not token:
-            print("Inicia sesion o registrate")
+            mostrar_snackbar(page, "Inicia sesión o regístrate para eliminar guardados.", exito=False)
+            return
 
-        datos ={}
-
+        datos = {}
         if publicacion_id:
             datos["publicacion_id"] = publicacion_id
 
         respuesta = eliminar_guardado_usuario(token, datos)
 
         if respuesta.get("success"):
-            print("Guardado eliminado")
+            mostrar_snackbar(page, "Guardado eliminado correctamente.", exito=True)
             recargar_guardados()
-
+        else:
+            mostrar_snackbar(page, respuesta.get("message", "Error al eliminar guardado."), exito=False)
 
     # ---------- Card factory ----------
     def saved_card(publicacion_id, usuario_id, nombre, categoria, subcategoria, precio, descripcion):

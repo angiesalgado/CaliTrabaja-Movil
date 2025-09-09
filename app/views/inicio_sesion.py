@@ -36,23 +36,51 @@ def inicio_sesion(page: ft.Page, cambiar_pantalla):
     def validar_email(email):
         return re.match(r"[^@]+@[^@]+\.[^@]+", email)
 
+    def mostrar_snackbar(mensaje, exito=True):
+        """Muestra SnackBar con estilo uniforme"""
+        sb = ft.SnackBar(
+            content=ft.Text(
+                mensaje,
+                color="white",
+                size=16,
+                weight=ft.FontWeight.BOLD
+            ),
+            bgcolor=ft.Colors.GREEN if exito else ft.Colors.RED,
+            duration=3000,
+        )
+        page.overlay.append(sb)
+        sb.open = True
+        page.update()
+
     def iniciar_sesion(e):
         email = email_field.value.strip()
         password = password_field.value.strip()
 
+        # Validaciones antes de llamar la API
         if not email or not password:
-            message_text.value = "Por favor, complete todos los campos."
-        elif not validar_email(email):
-            message_text.value = "El correo electrónico no es válido."
-        resultado = iniciar_sesion_api(email,password)
-        if resultado.get("success")==False:
-            message_text.value = resultado.get("message", "Error desconocido.")
+            mostrar_snackbar("Por favor, complete todos los campos.", exito=False)
+            return
+
+        if not validar_email(email):
+            mostrar_snackbar("El correo electrónico no es válido.", exito=False)
+            return
+
+        # Llamada a la API
+        resultado = iniciar_sesion_api(email, password)
+
+        if not resultado.get("success"):
+            mensaje_error = resultado.get("message", "Error desconocido.")
+            mostrar_snackbar(mensaje_error, exito=False)
         else:
-            message_text.value = "Inicio de sesión exitoso."
+            # Guardar token y mostrar éxito
             page.session_token = resultado.get("token")
+            mostrar_snackbar("Inicio de sesión exitoso.", exito=True)
+
+            # Cargar vista principal
             page.clean()
             Inicio.pantalla_inicio(page, cambiar_pantalla)
-        page.update()
+
+    page.update()
 
     def volver_atras(e):
         page.dialog = ft.AlertDialog(
