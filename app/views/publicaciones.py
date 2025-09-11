@@ -10,7 +10,6 @@ from app.API_services.traer_publicaciones import traer_publicaciones_usu
 def custom_expansion(page, title, controls_list):
     toggle_icon = ft.Icon(name=ft.Icons.KEYBOARD_ARROW_DOWN, color="#3EAEB1")
 
-
     styled_controls = []
     for control in controls_list:
         if isinstance(control, ft.Radio):
@@ -26,8 +25,6 @@ def custom_expansion(page, title, controls_list):
         styled_controls.append(control)
 
     content_column = ft.Column(styled_controls, visible=False, spacing=5)
-
-
 
     def toggle_visibility(e):
         content_column.visible = not content_column.visible
@@ -59,7 +56,6 @@ def custom_expansion(page, title, controls_list):
     )
 
 
-
 def publicaciones(page: ft.Page, cambiar_pantalla, origen=None):
     # ---------------- CONFIGURACIÓN GENERAL ----------------
     page.fonts = {
@@ -78,43 +74,32 @@ def publicaciones(page: ft.Page, cambiar_pantalla, origen=None):
 
     #---------------------------------------------
 
-
-
-    #------------------------------------------------------------------------------
-
     def obtener_token(page):
         return getattr(page, "session_token", None)
 
     def obtener_publicaciones(categoria_id=None, subcategoria_id=None, tiempo=None):
-
         datos = {}
-        if categoria_id and categoria_id !="Todas":
+        if categoria_id and categoria_id != "Todas":
             datos["categoria_id"] = categoria_id
-
         if subcategoria_id:
             datos["subcategoria_id"] = subcategoria_id
-
-        if tiempo and tiempo !="Todas":
+        if tiempo and tiempo != "Todas":
             datos["tiempo"] = tiempo
 
         publicaciones = traer_publicaciones_usu(datos)
-
         print(publicaciones)
 
         lista = []
-
-        # Solo recorro la parte de publicaciones_generales
         for pub in publicaciones.get("publicaciones_generales", []):
             lista.append({
                 "nombre": pub.get("nombre_experto"),
                 "profesion": pub.get("subcategoria"),
                 "descripcion": pub.get("descripcion"),
                 "costo": pub.get("costo"),
-                "usuario_id":pub.get("usuario_id"),
-                "publicacion_id":pub.get("publicacion_id")
+                "usuario_id": pub.get("usuario_id"),
+                "publicacion_id": pub.get("publicacion_id")
             })
 
-        # Devuelvo lo que necesites
         return {
             "lista": lista,
             "categorias": publicaciones.get("categorias", []),
@@ -122,7 +107,6 @@ def publicaciones(page: ft.Page, cambiar_pantalla, origen=None):
             "categoria_seleccionada": publicaciones.get("categoria_selecionada")
         }
 
-    # Si se pasó un filtro desde inicio
     if origen and "categoria_id" in origen:
         cat_id = origen["categoria_id"]
         resultado = obtener_publicaciones(categoria_id=cat_id)
@@ -130,9 +114,6 @@ def publicaciones(page: ft.Page, cambiar_pantalla, origen=None):
         resultado = obtener_publicaciones()
 
     publicaciones_filtradas = resultado["lista"]
-
-
-
 
     # ---------------- REFERENCIAS PARA FILTROS ----------------
     categoria_ref = ft.Ref[ft.RadioGroup]()
@@ -146,13 +127,13 @@ def publicaciones(page: ft.Page, cambiar_pantalla, origen=None):
     page.overlay.append(modal_detalle.dialog)
 
     def abrir_modal_detalle(nombre, profesion, descripcion, costo, calificacion):
-        print("CLICK -> abrir_modal_detalle:", nombre)  # <-- mira la consola donde corres Flet
+        print("CLICK -> abrir_modal_detalle:", nombre)
         modal_detalle.set_content(nombre, profesion, descripcion, costo, calificacion)
         page.dialog = modal_detalle.dialog
         modal_detalle.dialog.open = True
         page.update()
 
-    # 🔹 Overlay oscuro (para cerrar al hacer clic afuera)
+    # 🔹 Overlay oscuro
     overlay = ft.Container(
         bgcolor=ft.Colors.with_opacity(0.5, ft.Colors.BLACK),
         width=page.width,
@@ -161,24 +142,20 @@ def publicaciones(page: ft.Page, cambiar_pantalla, origen=None):
         on_click=lambda e: cerrar_filtros(),
     )
 
-
-
-
     # ---------------- FUNCIONES PANEL ----------------
-
     def aplicar_filtros(e):
         categoria = categorias.value
         fecha = fechas.value
         print(f"Categoria seleccionada: {categoria}, fecha seleccionada: {fecha}")
 
-        filtrar_publicaciones = obtener_publicaciones(categoria_id=categoria, subcategoria_id=None, tiempo=fecha)
-
+        filtrar_publicaciones = obtener_publicaciones(
+            categoria_id=categoria, subcategoria_id=None, tiempo=fecha
+        )
 
         publicaciones_filtradas = filtrar_publicaciones["lista"]
         total_filtradas = len(publicaciones_filtradas)
         print(f"Publicaciones filtradas: {publicaciones_filtradas}")
 
-        # 🔹 reconstruir el contenido del grid_column
         grid_column.controls.clear()
         for i in range(0, len(publicaciones_filtradas), 2):
             fila = ft.Container(
@@ -192,15 +169,12 @@ def publicaciones(page: ft.Page, cambiar_pantalla, origen=None):
                 padding=ft.padding.symmetric(horizontal=5)
             )
             grid_column.controls.append(fila)
-        # 🔹 actualizar el número de resultados dinámicamente
-        resultado_texto.value = f"{total_filtradas} resultados"
 
+        resultado_texto.value = f"{total_filtradas} resultados"
         page.update()
         cerrar_filtros()
 
     # ---------------- RADIOGROUPS PARA FILTROS ----------------
-
-
     categorias = ft.RadioGroup(
         ref=categoria_ref,
         content=ft.Column(
@@ -233,18 +207,18 @@ def publicaciones(page: ft.Page, cambiar_pantalla, origen=None):
             spacing=5
         )
     )
+
+    # ---------------- FILTROS PANEL ----------------
     filtros_panel = ft.Container(
         bgcolor="white",
         width=250,
-        height=page.height,
-        right=page.width,
+        height=page.height,  # SIEMPRE ocupa el alto visible de la pantalla
+        right=page.width,  # fuera de la vista inicialmente
         top=0,
-        padding=0,
         animate_position=300,
         content=ft.Column(
             [
-
-                # HEADER DEL PANEL
+                # HEADER (fijo arriba)
                 ft.Container(
                     bgcolor="#F8F8F8",
                     padding=ft.padding.symmetric(horizontal=15, vertical=10),
@@ -267,17 +241,13 @@ def publicaciones(page: ft.Page, cambiar_pantalla, origen=None):
                     ),
                 ),
 
-                # CUERPO DEL PANEL
+                # CONTENIDO (scrollable)
                 ft.Container(
                     expand=True,
                     padding=ft.padding.all(15),
                     content=ft.Column(
                         [
-
-                            # Categorías
                             custom_expansion(page, "Categorías", [categorias]),
-
-                            # Fecha de publicación
                             ft.Text(
                                 "Fecha de publicación",
                                 size=16,
@@ -285,14 +255,13 @@ def publicaciones(page: ft.Page, cambiar_pantalla, origen=None):
                                 color="black"
                             ),
                             fechas
-
                         ],
                         spacing=12,
-                        scroll=ft.ScrollMode.AUTO
+                        scroll=ft.ScrollMode.AUTO  # 👈 SOLO esto hace scroll
                     )
                 ),
 
-                # BOTONES
+                # FOOTER (fijo abajo)
                 ft.Container(
                     content=ft.Row(
                         [
@@ -310,7 +279,7 @@ def publicaciones(page: ft.Page, cambiar_pantalla, origen=None):
                             ),
                             ft.OutlinedButton(
                                 "Limpiar filtros",
-                                width=100,
+                                width=120,
                                 height=40,
                                 style=ft.ButtonStyle(
                                     shape=ft.RoundedRectangleBorder(radius=30),
@@ -328,28 +297,13 @@ def publicaciones(page: ft.Page, cambiar_pantalla, origen=None):
                         alignment=ft.MainAxisAlignment.CENTER,
                         spacing=20
                     ),
-                    padding=ft.padding.only(bottom=10)
+                    padding=ft.padding.only(bottom=15, top=5),
+                    bgcolor="white"
                 )
-
             ],
-            spacing=12,
+            spacing=0
         )
     )
-
-
-
-
-        #custom_expansion(
-        #   page,
-        #"Subcategorías",
-        # [
-        #    ft.Checkbox(label="SubCategoría 1"),
-        #   ft.Checkbox(label="SubCategoría 2"),
-        #]
-        #),
-
-
-
 
     def abrir_filtros(e=None):
         filtros_panel.right = page.width - 250
@@ -357,7 +311,7 @@ def publicaciones(page: ft.Page, cambiar_pantalla, origen=None):
         page.update()
 
     def cerrar_filtros(e=None):
-        filtros_panel.right = page.width  # vuelve a salir
+        filtros_panel.right = page.width
         overlay.visible = False
         page.update()
 
@@ -369,7 +323,6 @@ def publicaciones(page: ft.Page, cambiar_pantalla, origen=None):
         color="#666666"
     )
 
-    # ---------------- ENCABEZADO RESULTADOS ----------------
     header_resultados = ft.Container(
         content=ft.Column(
             [
@@ -392,45 +345,9 @@ def publicaciones(page: ft.Page, cambiar_pantalla, origen=None):
         alignment=ft.alignment.top_left
     )
 
-    # ---------------- PAGINACIÓN ----------------
-    paginacion = ft.Container(
-        content=ft.Row(
-            [
-                # Flecha izquierda en negro
-                ft.IconButton(ft.Icons.CHEVRON_LEFT, tooltip="Anterior", icon_color=TEXT_COLOR),
-
-                # Página activa
-                ft.Container(
-                    ft.Text("1", color="white"),  # círculo activo en blanco
-                    bgcolor=PRIMARY_COLOR,
-                    padding=6,
-                    border_radius=12,
-                ),
-                # Páginas inactivas en negro
-                ft.Container(ft.Text("2", color=TEXT_COLOR), padding=6, border_radius=12),
-                ft.Container(ft.Text("3", color=TEXT_COLOR), padding=6, border_radius=12),
-                ft.Container(ft.Text("4", color=TEXT_COLOR), padding=6, border_radius=12),
-                ft.Container(ft.Text("...", color=TEXT_COLOR), padding=6, border_radius=12),
-
-                # Flecha derecha en negro
-                ft.IconButton(ft.Icons.CHEVRON_RIGHT, tooltip="Siguiente", icon_color=TEXT_COLOR),
-            ],
-            alignment=ft.MainAxisAlignment.CENTER,
-            spacing=12,
-        ),
-        width=float("inf"),
-        bgcolor="white",
-        border_radius=12,
-        padding=10,
-        margin=ft.margin.all(8)
-    )
-
-
-
     # ---------------- FUNCIÓN TARJETAS ----------------
     def tarjeta_horizontal(nombre, profesion, descripcion, costo, usuario_id, publicacion_id, calificacion=4):
         mostrar_boton = len(descripcion) > 70
-
         stars = ft.Row(
             [ft.Icon(ft.Icons.STAR if i < calificacion else ft.Icons.STAR_BORDER,
                      color=PRIMARY_COLOR, size=14) for i in range(5)],
@@ -438,16 +355,20 @@ def publicaciones(page: ft.Page, cambiar_pantalla, origen=None):
             alignment=ft.MainAxisAlignment.CENTER
         )
         token = obtener_token(page)
-
-        if token == None:
+        if token is None:
             menu = menu_opciones(page, modal_reporte, incluir_guardar=False, incluir_reporte=False)
             print("Debes iniciar sesion o registrarte GUARDAR")
-
         else:
-            # Menú con Guardar + Reportar
-            menu = menu_opciones(page, modal_reporte, text_color=TEXT_COLOR, incluir_guardar=True, incluir_reporte=True,  usuario_id=usuario_id, publicacion_id=publicacion_id)
+            menu = menu_opciones(
+                page,
+                modal_reporte,
+                text_color=TEXT_COLOR,
+                incluir_guardar=True,
+                incluir_reporte=True,
+                usuario_id=usuario_id,
+                publicacion_id=publicacion_id
+            )
 
-        # Contenido principal
         tarjeta_contenido = ft.Container(
             padding=ft.padding.only(top=10),
             content=ft.Column(
@@ -461,7 +382,6 @@ def publicaciones(page: ft.Page, cambiar_pantalla, origen=None):
                     ft.Text(profesion, size=14, weight=ft.FontWeight.W_500, color=TEXT_COLOR,
                             text_align=ft.TextAlign.CENTER),
                     ft.Text("Descripción:", size=12, color=ft.Colors.BLACK54, text_align=ft.TextAlign.CENTER),
-
                     ft.Container(
                         content=ft.Text(
                             descripcion,
@@ -474,22 +394,20 @@ def publicaciones(page: ft.Page, cambiar_pantalla, origen=None):
                         height=32,
                         alignment=ft.alignment.center
                     ),
-
-                    # Botón Ver más con cursor y on_click
                     ft.Container(
                         content=ft.TextButton(
                             "Ver más" if mostrar_boton else "",
-                            on_click=(lambda e: abrir_modal_detalle(nombre, profesion, descripcion, costo,
-                                                                    calificacion)) if mostrar_boton else None,
+                            on_click=(lambda e: abrir_modal_detalle(
+                                nombre, profesion, descripcion, costo, calificacion
+                            )) if mostrar_boton else None,
                             style=ft.ButtonStyle(
                                 color=PRIMARY_COLOR if mostrar_boton else "transparent",
                                 padding=0,
                                 text_style=ft.TextStyle(size=11)
                             )
                         ),
-                        margin=ft.margin.only(top=-3)  # 🔹 lo sube 6px
+                        margin=ft.margin.only(top=-3)
                     )
-
                 ],
                 alignment=ft.MainAxisAlignment.CENTER,
                 horizontal_alignment=ft.CrossAxisAlignment.CENTER,
@@ -507,31 +425,20 @@ def publicaciones(page: ft.Page, cambiar_pantalla, origen=None):
             content=ft.Stack(
                 controls=[
                     tarjeta_contenido,
-                    ft.Container(  # 👈 ahora sí lo posicionamos aquí
-                        content=menu,
-                        top=5,
-                        right=5,
-                    ),
+                    ft.Container(content=menu, top=5, right=5),
                 ]
             )
         )
 
-
-
-
     # ---------------- GRID 2x2 ----------------
     filas = []
-
     grid_column = ft.Column(
         filas,
         spacing=7,
         horizontal_alignment=ft.CrossAxisAlignment.CENTER
     )
-
     grid_column.controls.clear()
-    # 🔹 Llenar el grid con todas las publicaciones al inicio
     publicaciones = publicaciones_filtradas
-
     for i in range(0, len(publicaciones), 2):
         fila = ft.Container(
             content=ft.Row(
@@ -545,27 +452,16 @@ def publicaciones(page: ft.Page, cambiar_pantalla, origen=None):
         )
         grid_column.controls.append(fila)
 
-
-
-    # Aquí organizamos a que interfaz devuelve dependiendo de dónde vino
-    back_action = lambda e: cambiar_pantalla("categorias") if origen == "categorias" else cambiar_pantalla("menu")
-
     # ---------------- NAV SUPERIOR + CONTENIDO ----------------
+    back_action = lambda e: cambiar_pantalla("categorias") if origen == "categorias" else cambiar_pantalla("menu")
     layout = ft.Column(
         [
-            nav_bar(
-                page,
-                page.width,
-                show_back=True,
-                show_explora=True,
-                on_back_click=back_action
-            ),
+            nav_bar(page, page.width, show_back=True, show_explora=True, on_back_click=back_action),
             ft.Stack(
                 [
                     ft.Column(
                         [
                             header_resultados,
-                            ft.Column([paginacion], alignment=ft.MainAxisAlignment.CENTER, spacing=1),
                             grid_column
                         ],
                         spacing=10,
@@ -582,30 +478,27 @@ def publicaciones(page: ft.Page, cambiar_pantalla, origen=None):
 
     # ---------------- MENÚ INFERIOR ----------------
     selected_index = 4
-
     def on_bottom_nav_click(index):
-        if index == 0:  # Inicio
+        if index == 0:
             cambiar_pantalla("inicio")
-        elif index == 1:  # Categorias
+        elif index == 1:
             cambiar_pantalla("categorias")
-        elif index == 2:  # Mensajes
+        elif index == 2:
             token = obtener_token(page)
             if token:
                 cambiar_pantalla("mensajes")
             else:
                 print("Inicia sesion o registrate")
-        elif index == 3:  # Guardados
+        elif index == 3:
             token = obtener_token(page)
             if token:
                 cambiar_pantalla("guardados")
             else:
                 print("Inicia sesion o registrate")
-        elif index == 4:  # Menú
-                cambiar_pantalla("menu")
-
+        elif index == 4:
+            cambiar_pantalla("menu")
 
     menu = menu_inferior(selected_index, on_bottom_nav_click)
-
     page.bottom_appbar = ft.BottomAppBar(
         content=menu,
         bgcolor=ft.Colors.WHITE,
@@ -614,7 +507,3 @@ def publicaciones(page: ft.Page, cambiar_pantalla, origen=None):
 
     page.add(layout)
     page.update()
-
-
-
-
