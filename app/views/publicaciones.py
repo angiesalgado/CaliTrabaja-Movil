@@ -133,14 +133,7 @@ def publicaciones(page: ft.Page, cambiar_pantalla, origen=None):
         modal_detalle.dialog.open = True
         page.update()
 
-    # 🔹 Overlay oscuro
-    overlay = ft.Container(
-        bgcolor=ft.Colors.with_opacity(0.5, ft.Colors.BLACK),
-        width=page.width,
-        height=page.height,
-        visible=False,
-        on_click=lambda e: cerrar_filtros(),
-    )
+
 
     # ---------------- FUNCIONES PANEL ----------------
     def aplicar_filtros(e):
@@ -207,14 +200,31 @@ def publicaciones(page: ft.Page, cambiar_pantalla, origen=None):
             spacing=5
         )
     )
+    # Calcula dinámicamente el alto del panel según el rango de la pantalla
+    if page.height <= 650:  # pantallas muy pequeñas (ej. iPhone SE)
+        panel_height = page.height * 0.85
+    elif 651 <= page.height <= 800:  # pantallas medianas (celulares estándar)
+        panel_height = page.height * 0.73
+    elif 801 <= page.height <= 1000:  # pantallas grandes (celulares grandes / tablets pequeñas)
+        panel_height = page.height * 0.65
+    else:  # pantallas muy grandes (tablets grandes o PC)
+        panel_height = page.height * 0.55
 
+        # 🔹 Overlay oscuro
+    overlay = ft.Container(
+        bgcolor=ft.Colors.with_opacity(0.5, ft.Colors.BLACK),
+        width=page.width,
+        height=panel_height,
+        visible=False,
+        on_click=lambda e: cerrar_filtros(),
+    )
     # ---------------- FILTROS PANEL ----------------
     filtros_panel = ft.Container(
         bgcolor="white",
         width=250,
-        height=page.height,  # SIEMPRE ocupa el alto visible de la pantalla
-        right=page.width,  # fuera de la vista inicialmente
-        top=0,
+        height=panel_height,  # 👈 ahora sí dinámico
+        right=page.width,
+        top=0,  # 👈 centrado vertical
         animate_position=300,
         content=ft.Column(
             [
