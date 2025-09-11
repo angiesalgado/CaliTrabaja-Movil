@@ -50,6 +50,37 @@ def pantalla_registro(page: ft.Page, cambiar_pantalla, origen=None):
             ft.Row([regla_mayus_icon, regla_mayus_text], alignment=ft.MainAxisAlignment.START),
         ]
     )
+    # --- CONFIRMACIÓN DE CONTRASEÑAS ---
+    confirm_icon = ft.Icon(size=18)  # sin icono inicial
+    confirm_text = ft.Text("", size=14)  # sin texto inicial
+
+    confirm_row = ft.Row(
+        [confirm_icon, confirm_text],
+        alignment=ft.MainAxisAlignment.START
+    )
+
+    def validar_confirmacion(e=None):
+        pwd = password_field.value or ""
+        confirm = confirm_field.value or ""
+
+        if confirm == "":
+            confirm_text.value = ""  # no texto
+            confirm_icon.name = None  # sin ícono
+            confirm_icon.color = None  # sin color
+        elif pwd == confirm:
+            confirm_icon.name = ft.Icons.CHECK_CIRCLE
+            confirm_icon.color = "green"
+            confirm_text.value = "Las contraseñas coinciden"
+        else:
+            confirm_icon.name = ft.Icons.HIGHLIGHT_OFF
+            confirm_icon.color = "red"
+            confirm_text.value = "Las contraseñas no coinciden"
+
+        page.update()
+
+    # Escuchar cambios en el campo repetir contraseña
+    confirm_field.on_change = validar_confirmacion
+
 
     def validar_password(e=None):
         pwd = password_field.value or ""
@@ -181,7 +212,9 @@ def pantalla_registro(page: ft.Page, cambiar_pantalla, origen=None):
                             icon_text("lock", password_field),
                             reglas_columna,
                             icon_text("lock", confirm_field),
+                            confirm_row,
                             message_text,
+
                             # --- BOTÓN REGISTRO ---
                             ft.Container(
                                 padding=ft.padding.only(top=1),

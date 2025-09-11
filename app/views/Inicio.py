@@ -11,7 +11,7 @@ from app.components.ModalReporte import ModalReporte
 from app.components.ModalTarjetaCompleta import ModalTarjetaCompleta
 from app.components.MenuTarjetasOpciones import menu_opciones
 from app.API_services.traer_publicaciones import traer_publicaciones_usu
-
+from app.API_services.datos_usuario import obtener_datos
 
 def pantalla_inicio(page: ft.Page, cambiar_pantalla):
 
@@ -56,6 +56,17 @@ def pantalla_inicio(page: ft.Page, cambiar_pantalla):
     token = obtener_token(page)
     usuario_autenticado = token is not None
 
+    token = obtener_token(page)
+    usuario_autenticado = token is not None
+
+    # 🔹 Obtener nombre usuario si hay sesión
+    nombre_usuario = None
+    if usuario_autenticado:
+        try:
+            datos_usuario = obtener_datos(token)
+            nombre_usuario = datos_usuario.get("usuario", {}).get("nombre")
+        except Exception as e:
+            print("Error obteniendo datos usuario:", e)
 
     # ---------------- NAV SUPERIOR ----------------
     nav = nav_bar(
@@ -65,6 +76,26 @@ def pantalla_inicio(page: ft.Page, cambiar_pantalla):
         show_explora=False,  # 👉 en Inicio NO aparece "Explora en"
         show_login_icon=not usuario_autenticado,
         on_login_click=lambda e: cambiar_pantalla("login")  # 👈 acción del botón
+    )
+
+    # ---------------- SALUDO USUARIO LOGUEADO -------------------
+
+    # 🔹 Texto "Hola, Nombre"
+    saludo_usuario = ft.Container(
+        visible=usuario_autenticado,  # solo si hay sesión
+        content=ft.Row(
+            alignment=ft.MainAxisAlignment.START,  # 👈 alinea a la izquierda
+            controls=[
+                ft.Text("Hola,", size=20, weight=ft.FontWeight.BOLD, color=ft.Colors.BLACK),
+                ft.Text(
+                    nombre_usuario if nombre_usuario else "",
+                    size=20,
+                    weight=ft.FontWeight.BOLD,
+                    color="#3EAEB1"
+                ),
+            ],
+        ),
+        padding=ft.padding.symmetric(horizontal=8, vertical=8)  # 👈 igual que categorías
     )
 
     # ---------------- FRASES CAMBIANTES + BOTÓN INICIO SESIÓN ----------------
@@ -492,7 +523,7 @@ def pantalla_inicio(page: ft.Page, cambiar_pantalla):
             )
         )
 
-    def obtener_datos(page):
+    def obtener_datos_inicio(page):
         token = obtener_token(page)
         respuesta = inicio_api(token)
         print(respuesta)
@@ -504,19 +535,34 @@ def pantalla_inicio(page: ft.Page, cambiar_pantalla):
             "aleatorias": publicaciones_aleatorias
         }
 
-    valores = obtener_datos(page)
+    valores = obtener_datos_inicio(page)
     recientes=valores.get("recientes" or [])
     aleatorias=valores.get("aleatorias" or [])
     # ---------------- PUBLICACIONES ----------------
 
-
     publicaciones_container = ft.Column(
         [
-            ft.Container(content=ft.Text("Te podría interesar", size=22, weight=ft.FontWeight.BOLD, color=TEXT_COLOR),
-                         alignment=ft.alignment.center, padding=ft.padding.only(bottom=5, top=15)),
-            ft.Container(content=ft.Row(controls=[tarjeta_horizontal(**p) for p in aleatorias],
-                                        spacing=7, scroll=ft.ScrollMode.HIDDEN),
-                         padding=ft.padding.symmetric(horizontal=6))
+            # Título centrado
+            ft.Container(
+                content=ft.Text("Te podría interesar", size=22, weight=ft.FontWeight.BOLD, color=TEXT_COLOR),
+                alignment=ft.alignment.center,
+                padding=ft.padding.only(bottom=5, top=15)
+            ),
+            # Texto "Desliza →" alineado a la derecha
+            ft.Container(
+                alignment=ft.alignment.center_right,
+                padding=ft.padding.only(right=15, bottom=2),
+                content=ft.Text("Desliza →", size=12, color=ft.Colors.GREY_500)
+            ),
+            # Carrusel
+            ft.Container(
+                content=ft.Row(
+                    controls=[tarjeta_horizontal(**p) for p in aleatorias],
+                    spacing=7,
+                    scroll=ft.ScrollMode.HIDDEN
+                ),
+                padding=ft.padding.symmetric(horizontal=6)
+            )
         ]
     )
 
@@ -624,6 +670,7 @@ def pantalla_inicio(page: ft.Page, cambiar_pantalla):
             ft.Container(
                 content=ft.Column(
                     controls=[
+                        saludo_usuario,
                         contenedor_frase,
                         categorias_titulo,
                         categorias_container,
@@ -654,8 +701,14 @@ def pantalla_inicio(page: ft.Page, cambiar_pantalla):
 
     # ---------------- RESPONSIVE ----------------
     def on_resize(e):
-        # 🔹 Ajusta el navbar superior al cambiar el tamaño de la pantalla
-        layout.controls[0] = nav_bar(page.width, ft.Ref[ft.Container]())
+        layout.controls[0] = nav_bar(
+            page,
+            page.width,
+            show_back=False,
+            show_explora=False,
+            show_login_icon=not usuario_autenticado,
+            on_login_click=lambda e: cambiar_pantalla("login")
+        )
         _config_pagination()
         page.update()
 

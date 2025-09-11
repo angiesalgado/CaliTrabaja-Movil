@@ -120,6 +120,7 @@ def pantalla_configuracion(page: ft.Page, cambiar_pantalla=None):
         elif index == 4:
             cambiar_pantalla("menu")
     # ---------- SUBVISTAS ----------
+
     def cambiar_contrasena():
         page.controls.clear()
         page.bottom_appbar = None
@@ -127,45 +128,106 @@ def pantalla_configuracion(page: ft.Page, cambiar_pantalla=None):
         nueva_field = password_field_factory()
         repetir_field = password_field_factory()
 
+        # --- VALIDACIONES DE CONTRASEÑA (como en registro) ---
+        regla_6_icon = ft.Icon(name=ft.Icons.HIGHLIGHT_OFF, color="red", size=18)
+        regla_6_text = ft.Text("Al menos 6 caracteres", size=14)
 
+        regla_mayus_icon = ft.Icon(name=ft.Icons.HIGHLIGHT_OFF, color="red", size=18)
+        regla_mayus_text = ft.Text("Al menos 1 letra mayúscula", size=14)
+
+        reglas_columna = ft.Column(
+            spacing=5,
+            alignment=ft.MainAxisAlignment.START,
+            horizontal_alignment=ft.CrossAxisAlignment.START,
+            controls=[
+                ft.Row([regla_6_icon, regla_6_text], alignment=ft.MainAxisAlignment.START),
+                ft.Row([regla_mayus_icon, regla_mayus_text], alignment=ft.MainAxisAlignment.START),
+            ]
+        )
+
+        def validar_password(e=None):
+            pwd = nueva_field.value or ""
+            # longitud
+            if len(pwd) >= 6:
+                regla_6_icon.name = ft.Icons.CHECK_CIRCLE
+                regla_6_icon.color = "green"
+            else:
+                regla_6_icon.name = ft.Icons.HIGHLIGHT_OFF
+                regla_6_icon.color = "red"
+            # mayúscula
+            import re
+            if re.search(r"[A-Z]", pwd):
+                regla_mayus_icon.name = ft.Icons.CHECK_CIRCLE
+                regla_mayus_icon.color = "green"
+            else:
+                regla_mayus_icon.name = ft.Icons.HIGHLIGHT_OFF
+                regla_mayus_icon.color = "red"
+            page.update()
+
+        nueva_field.on_change = validar_password
+
+        # --- CONFIRMACIÓN DE CONTRASEÑAS ---
+        confirm_icon = ft.Icon(size=18)
+        confirm_text = ft.Text("", size=14)
+        confirm_row = ft.Row([confirm_icon, confirm_text], alignment=ft.MainAxisAlignment.START)
+
+        def validar_confirmacion(e=None):
+            pwd = nueva_field.value or ""
+            confirm = repetir_field.value or ""
+            if confirm == "":
+                confirm_text.value = ""
+                confirm_icon.name = None
+                confirm_icon.color = None
+            elif pwd == confirm:
+                confirm_icon.name = ft.Icons.CHECK_CIRCLE
+                confirm_icon.color = "green"
+                confirm_text.value = "Las contraseñas coinciden"
+            else:
+                confirm_icon.name = ft.Icons.HIGHLIGHT_OFF
+                confirm_icon.color = "red"
+                confirm_text.value = "Las contraseñas no coinciden"
+            page.update()
+
+        repetir_field.on_change = validar_confirmacion
+
+        # --- GUARDAR CONTRASEÑA (NO TOCAMOS BACKEND) ---
         def guardar_contraseña(e):
-
             token = obtener_token(page)
             if not token:
                 print("Debes iniciar sesion o registrarte")
+                return
 
             contraseña = actual_field.value.strip() if actual_field.value else None
             nueva = nueva_field.value.strip() if nueva_field.value else None
             repetir = repetir_field.value.strip() if repetir_field.value else None
 
-            if  not contraseña or not nueva or not repetir :
+            if not contraseña or not nueva or not repetir:
                 print("Debes ingresar la contraseña, nueva y repetir")
                 return
 
             print(f"CONTRASEÑA ACTUAL: {contraseña}, NUEVA CONTRASEÑA: {nueva}, REPETIR CONTRASEÑA: {repetir}")
 
             datos = {}
-
             if contraseña:
-                 datos["actual_contrasena"] = contraseña
+                datos["actual_contrasena"] = contraseña
             if nueva:
-                 datos["nueva_contrasena"]= nueva
+                datos["nueva_contrasena"] = nueva
             if repetir:
-                 datos["confirmar_contrasena"]= repetir
-
+                datos["confirmar_contrasena"] = repetir
 
             respuesta = cambiar_contraseña_usuario(token, datos)
-
             if respuesta.get("message"):
                 print(respuesta["message"])
                 Inicio.pantalla_inicio(page, cambiar_pantalla)
                 page.update()
 
+        # --- UI ---
         page.add(
             ft.Column(
                 expand=True,
                 controls=[
-                    nav_configuracion(page, page.width, "Cambiar contraseña", volver_callback=lambda e: mostrar_configuracion()),  # 🔹 vuelve a Configuración
+                    nav_configuracion(page, page.width, "Cambiar contraseña",
+                                      volver_callback=lambda e: mostrar_configuracion()),
                     ft.Container(
                         expand=True,
                         width=float("inf"),
@@ -174,15 +236,16 @@ def pantalla_configuracion(page: ft.Page, cambiar_pantalla=None):
                         content=ft.Column(
                             spacing=20,
                             horizontal_alignment=(
-                                ft.CrossAxisAlignment.START if page.width < 500 else ft.CrossAxisAlignment.CENTER
-                            ),
+                                ft.CrossAxisAlignment.START if page.width < 500 else ft.CrossAxisAlignment.CENTER),
                             controls=[
                                 ft.Text("Contraseña actual", size=16, weight=ft.FontWeight.BOLD, color="#000000"),
                                 actual_field,
                                 ft.Text("Nueva contraseña", size=16, weight=ft.FontWeight.BOLD, color="#000000"),
                                 nueva_field,
+                                reglas_columna,  # 👈 validación debajo de nueva
                                 ft.Text("Repetir contraseña", size=16, weight=ft.FontWeight.BOLD, color="#000000"),
                                 repetir_field,
+                                confirm_row,  # 👈 validación debajo de repetir
                                 ft.Row(
                                     spacing=10,
                                     alignment=ft.MainAxisAlignment.CENTER,

@@ -389,8 +389,11 @@ def publicaciones(page: ft.Page, cambiar_pantalla, origen=None):
                     ft.Text(nombre, weight=ft.FontWeight.BOLD, size=17, color=TEXT_COLOR,
                             text_align=ft.TextAlign.CENTER),
                     stars,
-                    ft.Text(profesion, size=14, weight=ft.FontWeight.W_500, color=TEXT_COLOR,
-                            text_align=ft.TextAlign.CENTER),
+                    ft.Text(
+                        nombre,
+                        size=14, weight=ft.FontWeight.W_500, color=TEXT_COLOR,
+                        text_align=ft.TextAlign.CENTER
+                    ),
                     ft.Text("Descripción:", size=12, color=ft.Colors.BLACK54, text_align=ft.TextAlign.CENTER),
                     ft.Container(
                         content=ft.Text(
