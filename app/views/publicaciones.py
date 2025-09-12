@@ -111,7 +111,8 @@ def publicaciones(page: ft.Page, cambiar_pantalla, origen=None):
                 "descripcion": pub.get("descripcion"),
                 "costo": pub.get("costo"),
                 "usuario_id":pub.get("usuario_id"),
-                "publicacion_id":pub.get("publicacion_id")
+                "publicacion_id":pub.get("publicacion_id"),
+                "foto_perfil": pub.get("foto_perfil")
             })
 
         # Devuelvo lo que necesites
@@ -145,9 +146,9 @@ def publicaciones(page: ft.Page, cambiar_pantalla, origen=None):
     modal_detalle = ModalTarjetaCompleta()
     page.overlay.append(modal_detalle.dialog)
 
-    def abrir_modal_detalle(nombre, profesion, descripcion, costo, calificacion):
+    def abrir_modal_detalle(foto_perfil,nombre, profesion, descripcion, costo, calificacion):
         print("CLICK -> abrir_modal_detalle:", nombre)  # <-- mira la consola donde corres Flet
-        modal_detalle.set_content(nombre, profesion, descripcion, costo, calificacion)
+        modal_detalle.set_content(foto_perfil,nombre, profesion, descripcion, costo, calificacion)
         page.dialog = modal_detalle.dialog
         modal_detalle.dialog.open = True
         page.update()
@@ -428,7 +429,7 @@ def publicaciones(page: ft.Page, cambiar_pantalla, origen=None):
 
 
     # ---------------- FUNCIÓN TARJETAS ----------------
-    def tarjeta_horizontal(nombre, profesion, descripcion, costo, usuario_id, publicacion_id, calificacion=4):
+    def tarjeta_horizontal(foto_perfil, nombre, profesion, descripcion, costo, usuario_id, publicacion_id, calificacion=4):
         mostrar_boton = len(descripcion) > 70
 
         stars = ft.Row(
@@ -447,12 +448,19 @@ def publicaciones(page: ft.Page, cambiar_pantalla, origen=None):
             # Menú con Guardar + Reportar
             menu = menu_opciones(page, modal_reporte, text_color=TEXT_COLOR, incluir_guardar=True, incluir_reporte=True,  usuario_id=usuario_id, publicacion_id=publicacion_id)
 
+        base_url = "http://localhost:5000/static/uploads/perfiles/"
+
+        if foto_perfil and foto_perfil.lower() != "none":
+            img_url = f"{base_url}{foto_perfil}"
+        else:
+            img_url = f"{base_url}defecto.png"  # imagen por defecto
+
         # Contenido principal
         tarjeta_contenido = ft.Container(
             padding=ft.padding.only(top=10),
             content=ft.Column(
                 [
-                    ft.CircleAvatar(radius=30, bgcolor=ft.Colors.GREY_300),
+                    ft.CircleAvatar(foreground_image_src=img_url, radius=30, bgcolor=ft.Colors.GREY_300),
                     ft.Text(f"COP {costo}/h", size=11, color=TEXT_COLOR, text_align=ft.TextAlign.CENTER),
                     ft.Container(height=8),
                     ft.Text(nombre, weight=ft.FontWeight.BOLD, size=17, color=TEXT_COLOR,

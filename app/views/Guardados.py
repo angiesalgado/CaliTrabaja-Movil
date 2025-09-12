@@ -96,6 +96,7 @@ def render_guardados(page: ft.Page, cambiar_pantalla=None):
                 "descripcion": pub.get("descripcion"),
                 "costo": pub.get("costo"),
                 "calificacion": pub.get("calificacion"),
+                "foto_perfil": pub.get("foto_perfil"),
             })
         return lista
 
@@ -106,10 +107,12 @@ def render_guardados(page: ft.Page, cambiar_pantalla=None):
 
     def recargar_guardados():
         cards.controls.clear()
+
         nuevos_guardados = obtener_guardados()
         for g in nuevos_guardados:
             cards.controls.append(
                 saved_card(
+                    g.get("foto_perfil", "none"),
                     g.get("publicacion_id"),
                     g.get("usuario_id"),
                     g.get("nombre_experto", "Sin nombre"),
@@ -143,7 +146,7 @@ def render_guardados(page: ft.Page, cambiar_pantalla=None):
 
 
     # ---------- Card factory ----------
-    def saved_card(publicacion_id, usuario_id, nombre, categoria, subcategoria, precio, descripcion):
+    def saved_card(foto_perfil,publicacion_id, usuario_id, nombre, categoria, subcategoria, precio, descripcion):
 
 
         if len(descripcion) > 300:
@@ -151,15 +154,22 @@ def render_guardados(page: ft.Page, cambiar_pantalla=None):
 
         # Menú solo con Reportar (sin opción Guardar)
         menu_solo_reportar = menu_opciones(
-            page, modal_reporte, text_color="black", incluir_guardar=False, usuario_id=usuario_id
+            page, modal_reporte, text_color="black", incluir_guardar=False, usuario_id=usuario_id, incluir_reporte=True,
         )
+
+        base_url = "http://localhost:5000/static/uploads/perfiles/"
+
+        if foto_perfil and foto_perfil.lower() != "none":
+            img_url = f"{base_url}{foto_perfil}"
+        else:
+            img_url = f"{base_url}defecto.png"  # imagen por defecto
 
         return ft.Container(
             content=ft.Column(
                 [
                     ft.Row(
                         [
-                            ft.CircleAvatar(radius=44, bgcolor="#E0E0E0"),
+                            ft.CircleAvatar(foreground_image_src=img_url, radius=30, bgcolor=ft.Colors.GREY_300),
                             ft.Column(
                                 [
                                     ft.Row(
