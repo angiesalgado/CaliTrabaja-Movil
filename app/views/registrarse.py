@@ -50,6 +50,37 @@ def pantalla_registro(page: ft.Page, cambiar_pantalla, origen=None):
             ft.Row([regla_mayus_icon, regla_mayus_text], alignment=ft.MainAxisAlignment.START),
         ]
     )
+    # --- CONFIRMACIÓN DE CONTRASEÑAS ---
+    confirm_icon = ft.Icon(size=18)  # sin icono inicial
+    confirm_text = ft.Text("", size=14)  # sin texto inicial
+
+    confirm_row = ft.Row(
+        [confirm_icon, confirm_text],
+        alignment=ft.MainAxisAlignment.START
+    )
+
+    def validar_confirmacion(e=None):
+        pwd = password_field.value or ""
+        confirm = confirm_field.value or ""
+
+        if confirm == "":
+            confirm_text.value = ""  # no texto
+            confirm_icon.name = None  # sin ícono
+            confirm_icon.color = None  # sin color
+        elif pwd == confirm:
+            confirm_icon.name = ft.Icons.CHECK_CIRCLE
+            confirm_icon.color = "green"
+            confirm_text.value = "Las contraseñas coinciden"
+        else:
+            confirm_icon.name = ft.Icons.HIGHLIGHT_OFF
+            confirm_icon.color = "red"
+            confirm_text.value = "Las contraseñas no coinciden"
+
+        page.update()
+
+    # Escuchar cambios en el campo repetir contraseña
+    confirm_field.on_change = validar_confirmacion
+
 
     def validar_password(e=None):
         pwd = password_field.value or ""
@@ -75,30 +106,51 @@ def pantalla_registro(page: ft.Page, cambiar_pantalla, origen=None):
     # Escuchar cambios en el campo contraseña
     password_field.on_change = validar_password
 
+    def mostrar_snackbar(mensaje, exito=True):
+        """Muestra SnackBar con estilo uniforme"""
+        sb = ft.SnackBar(
+            content=ft.Text(
+                mensaje,
+                color="white",
+                size=16,
+                weight=ft.FontWeight.BOLD
+            ),
+            bgcolor=ft.Colors.GREEN if exito else ft.Colors.RED,
+            duration=3000,
+        )
+        page.overlay.append(sb)
+        sb.open = True
+        page.update()
+
     def registrarse(e):
-        if not all([nombre_field.value, apellido_field.value, email_field.value, password_field.value, confirm_field.value]):
-            message_text.value = "Por favor, complete todos los campos."
+        if not all([nombre_field.value, apellido_field.value, email_field.value, password_field.value,
+                    confirm_field.value]):
+            mostrar_snackbar("Por favor, complete todos los campos.", exito=False)
+            return
         elif not validar_email(email_field.value):
-            message_text.value = "Correo electrónico inválido."
+            mostrar_snackbar("Correo electrónico inválido.", exito=False)
+            return
         elif password_field.value != confirm_field.value:
-            message_text.value = "Las contraseñas no coinciden."
+            mostrar_snackbar("Las contraseñas no coinciden.", exito=False)
+            return
+
         nombre = nombre_field.value
         apellido = apellido_field.value
         email = email_field.value
         password = password_field.value
         confirm = confirm_field.value
-        resultado = registrar_usuario_api(nombre,apellido,email,password,confirm)
-        if resultado.get("success")==False:
-            message_text.value = resultado.get("message", "Error desconocido.")
+
+        resultado = registrar_usuario_api(nombre, apellido, email, password, confirm)
+
+        if resultado.get("success") == False:
+            mostrar_snackbar(resultado.get("message", "Error desconocido."), exito=False)
         else:
-            message_text.value = "✅ Registro exitoso (simulado)."
             page.session_token = resultado.get("token")
+            mostrar_snackbar("Registro exitoso.", exito=True)
+
+            # Cargar pantalla de inicio
             page.clean()
-            Inicio.pantalla_inicio(page,cambiar_pantalla)
-        page.update()
-
-
-
+            Inicio.pantalla_inicio(page, cambiar_pantalla)
 
     def ir_a_login(e):
         cambiar_pantalla("login")
@@ -160,7 +212,9 @@ def pantalla_registro(page: ft.Page, cambiar_pantalla, origen=None):
                             icon_text("lock", password_field),
                             reglas_columna,
                             icon_text("lock", confirm_field),
+                            confirm_row,
                             message_text,
+
                             # --- BOTÓN REGISTRO ---
                             ft.Container(
                                 padding=ft.padding.only(top=1),
