@@ -426,7 +426,7 @@ def pantalla_inicio(page: ft.Page, cambiar_pantalla):
     )
 
     # ---------------- FUNCIÓN TARJETA (ESTILO VERTICAL) ----------------
-    def tarjeta_horizontal(nombre, categoria, descripcion, costo, calificacion, publicacion_id, usuario_id):
+    def tarjeta_horizontal(foto_perfil,nombre, categoria, descripcion, costo, calificacion, publicacion_id, usuario_id):
         mostrar_boton = len(descripcion) > 70
 
         stars = ft.Row(
@@ -450,8 +450,14 @@ def pantalla_inicio(page: ft.Page, cambiar_pantalla):
 
             print("PUBLICACION O REPORTE HECHO")
 
+        base_url = "http://localhost:5000/static/uploads/perfiles/"
 
+        if foto_perfil and foto_perfil.lower() != "none":
+            img_url = f"{base_url}{foto_perfil}"
+        else:
+            img_url = f"{base_url}defecto.png"  # imagen por defecto
 
+        print(f"RUTA IMAGEN {img_url}")
 
 
         # Contenido principal
@@ -459,7 +465,9 @@ def pantalla_inicio(page: ft.Page, cambiar_pantalla):
             padding=ft.padding.only(top=10),
             content=ft.Column(
                 [
-                    ft.CircleAvatar(radius=30, bgcolor=ft.Colors.GREY_300),
+                    ft.CircleAvatar(foreground_image_src=img_url, width=60, height=60, bgcolor=ft.Colors.GREY_300),
+
+
                     ft.Text(f"COP {costo}/h", size=11, color=TEXT_COLOR, text_align=ft.TextAlign.CENTER),
                     ft.Container(height=8),
                     ft.Text(nombre, weight=ft.FontWeight.BOLD, size=17, color=TEXT_COLOR,
