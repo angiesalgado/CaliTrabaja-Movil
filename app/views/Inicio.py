@@ -385,9 +385,9 @@ def pantalla_inicio(page: ft.Page, cambiar_pantalla):
                         cat["nombre"],
                         size=12,
                         text_align=ft.TextAlign.CENTER,
-                        max_lines=3,  # 👉
-                        overflow=ft.TextOverflow.ELLIPSIS,  # 👉 Si aún sobra, pone "..."
-                        width=70  # 👉 Fuerza un ancho fijo para que haga el salto de línea
+                        max_lines=3,
+                        overflow=ft.TextOverflow.ELLIPSIS,
+                        width=70
                     )
                 ],
                 horizontal_alignment=ft.CrossAxisAlignment.CENTER
@@ -460,7 +460,23 @@ def pantalla_inicio(page: ft.Page, cambiar_pantalla):
         print(f"RUTA IMAGEN {img_url}")
 
 
+
         # Contenido principal
+        es_nombre_largo = len(nombre) > 20
+        lineas_descripcion = 1 if es_nombre_largo else 2
+
+        # margen dinámico para el botón
+        if lineas_descripcion == 2:
+            margen_boton = ft.margin.only(top=-5)  # 🔹 más abajo cuando son 2 líneas
+        else:
+            margen_boton = ft.margin.only(top=-15)  # 🔹 más arriba cuando es 1 línea
+
+        # margen dinámico según la condición
+        if es_nombre_largo and mostrar_boton:
+            margen_descripcion = ft.margin.only(top=-10)  # más pegado
+        else:
+            margen_descripcion = ft.margin.only(top=-3)  # normal
+
         tarjeta_contenido = ft.Container(
             padding=ft.padding.only(top=10),
             content=ft.Column(
@@ -481,13 +497,14 @@ def pantalla_inicio(page: ft.Page, cambiar_pantalla):
                         content=ft.Text(
                             descripcion,
                             size=11,
-                            max_lines=2,
+                            max_lines=lineas_descripcion,
                             overflow=ft.TextOverflow.ELLIPSIS,
                             color=TEXT_COLOR,
                             text_align=ft.TextAlign.CENTER
                         ),
                         height=32,
-                        alignment=ft.alignment.center
+                        alignment=ft.alignment.center,
+                        margin=margen_descripcion
                     ),
 
                     # Botón Ver más con cursor y on_click
@@ -502,7 +519,7 @@ def pantalla_inicio(page: ft.Page, cambiar_pantalla):
                                 text_style=ft.TextStyle(size=11)
                             )
                         ),
-                        margin=ft.margin.only(top=-3)  # 🔹 lo sube 6px
+                        margin=margen_boton
                     )
 
                 ],
