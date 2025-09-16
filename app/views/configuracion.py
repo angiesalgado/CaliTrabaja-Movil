@@ -6,6 +6,25 @@ from app.API_services.cambiar_contraseña import cambiar_contraseña_usuario
 from app.API_services.cerrar_sesion import cerrar_sesion_api
 from app.API_services.deshabilitar_cuenta import deshabilitar_cuenta_usu
 
+
+
+# ---------- FUNCIÓN GLOBAL PARA MOSTRAR SNACKBAR ----------
+def mostrar_snackbar(page: ft.Page, mensaje: str, exito=True):
+    """Muestra SnackBar con estilo uniforme"""
+    sb = ft.SnackBar(
+        content=ft.Text(
+            mensaje,
+            color="white",
+            size=16,
+            weight=ft.FontWeight.BOLD
+        ),
+        bgcolor=ft.Colors.GREEN if exito else ft.Colors.RED,
+        duration=3000,
+    )
+    page.overlay.append(sb)
+    sb.open = True
+    page.update()
+
 # ---------- NAV SUPERIOR DE CONFIGURACIÓN ----------
 def nav_configuracion(page: ft.Page, page_width: float, titulo="Configuración", volver_callback=None):
     text_size = 24 if page_width < 400 else 28
@@ -79,6 +98,7 @@ def pantalla_configuracion(page: ft.Page, cambiar_pantalla=None):
     nombre =datos.get("primer_nombre")
     fecha = datos.get("fecha")
     rol = datos.get("rol")
+
 
 
     # ---------- FACTORÍA CAMPOS PASSWORD ----------
@@ -190,11 +210,13 @@ def pantalla_configuracion(page: ft.Page, cambiar_pantalla=None):
 
         repetir_field.on_change = validar_confirmacion
 
+
+
         # --- GUARDAR CONTRASEÑA (NO TOCAMOS BACKEND) ---
         def guardar_contraseña(e):
             token = obtener_token(page)
             if not token:
-                print("Debes iniciar sesion o registrarte")
+                mostrar_snackbar("Debes iniciar sesión o registrarte", exito=False)
                 return
 
             contraseña = actual_field.value.strip() if actual_field.value else None
@@ -202,24 +224,26 @@ def pantalla_configuracion(page: ft.Page, cambiar_pantalla=None):
             repetir = repetir_field.value.strip() if repetir_field.value else None
 
             if not contraseña or not nueva or not repetir:
-                print("Debes ingresar la contraseña, nueva y repetir")
+                mostrar_snackbar("Debes ingresar todos los campos", exito=False)
                 return
 
-            print(f"CONTRASEÑA ACTUAL: {contraseña}, NUEVA CONTRASEÑA: {nueva}, REPETIR CONTRASEÑA: {repetir}")
+            if nueva != repetir:
+                mostrar_snackbar("Las contraseñas no coinciden", exito=False)
+                return
 
-            datos = {}
-            if contraseña:
-                datos["actual_contrasena"] = contraseña
-            if nueva:
-                datos["nueva_contrasena"] = nueva
-            if repetir:
-                datos["confirmar_contrasena"] = repetir
+            datos = {
+                "actual_contrasena": contraseña,
+                "nueva_contrasena": nueva,
+                "confirmar_contrasena": repetir
+            }
 
             respuesta = cambiar_contraseña_usuario(token, datos)
-            if respuesta.get("message"):
-                print(respuesta["message"])
+
+            if respuesta.get("error"):
+                mostrar_snackbar(respuesta["error"], exito=False)
+            elif respuesta.get("message"):
+                mostrar_snackbar(respuesta["message"], exito=True)
                 Inicio.pantalla_inicio(page, cambiar_pantalla)
-                page.update()
 
         # --- UI ---
         page.add(
@@ -299,30 +323,24 @@ def pantalla_configuracion(page: ft.Page, cambiar_pantalla=None):
         def deshabilitar_cuenta(e):
             token = obtener_token(page)
             if not token:
-                print("Debes iniciar sesion o registrarte")
+                mostrar_snackbar("Debes iniciar sesión o registrarte", exito=False)
                 return
 
             contraseña = confirmar_field.value.strip() if confirmar_field.value else None
             if not contraseña:
-                error_text.value = "Debes ingresar la contraseña"
-                error_text.visible = True
-                page.update()
+                mostrar_snackbar("Debes ingresar la contraseña", exito=False)
                 return
 
-            # 🔹 Validar contraseña con backend (sin eliminar todavía)
+            # 🔹 Validar contraseña con backend
             datos = {"contrasena": contraseña}
             respuesta = deshabilitar_cuenta_usu(token, datos)
 
             if respuesta.get("error") or respuesta.get("success") is False:
-                # Contraseña incorrecta
-                error_text.value = "Contraseña incorrecta"
-                error_text.visible = True
-                page.update()
+                mostrar_snackbar("Contraseña incorrecta", exito=False)
                 return
 
             # 🔹 Si es correcta -> guardar y abrir modal
             page.validar_contraseña_eliminar = contraseña
-            error_text.visible = False
             mostrar_modal_eliminar_cuenta(page, token, cambiar_pantalla)
 
         page.add(
@@ -481,21 +499,22 @@ def mostrar_modal_eliminar_cuenta(page, token, cambiar_pantalla):
     """Muestra modal confirmación para eliminar cuenta"""
 
     def confirmar_eliminacion(e):
-        # 🔹 Obtener la contraseña guardada
         contraseña = getattr(page, "validar_contraseña_eliminar", None)
 
         datos = {"contrasena": contraseña}
         respuesta = deshabilitar_cuenta_usu(token, datos)
 
         if respuesta.get("error") or respuesta.get("success") is False:
-            print("Error al eliminar cuenta desde modal:", respuesta)
+            mostrar_snackbar(page, "Error al eliminar la cuenta", exito=False)
             return
 
-        # 🔹 Si fue correcto, cerramos sesión
+        # Si fue correcto, cerramos sesión
         cerrar_sesion_api(token)
         page.session_token = None
         modal.open = False
         page.update()
+
+        mostrar_snackbar(page, "Cuenta eliminada correctamente", exito=True)
 
         from . import Inicio
         page.clean()

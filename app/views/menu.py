@@ -176,7 +176,7 @@ def mostrar_modal_cerrar_sesion(page, token, cambiar_pantalla):
 
     def cerrar_sesion(e):
         from . import Inicio
-        cerrar_sesion_api(token)   # Llamar API
+        cerrar_sesion_api(token)  # Llamar API
         page.session_token = None
         modal.open = False
         page.update()
@@ -184,6 +184,21 @@ def mostrar_modal_cerrar_sesion(page, token, cambiar_pantalla):
         # Redirige al inicio
         page.clean()
         Inicio.pantalla_inicio(page, cambiar_pantalla)
+
+        # Ahora sí mostrar snackbar en la nueva vista
+        sb = ft.SnackBar(
+            content=ft.Text(
+                "Sesión cerrada con éxito",
+                color="white",
+                size=16,
+                weight=ft.FontWeight.BOLD
+            ),
+            bgcolor=ft.Colors.GREEN,
+            duration=3000,
+        )
+        page.overlay.append(sb)
+        sb.open = True
+        page.update()
 
     def cancelar(e):
         modal.open = False
