@@ -177,6 +177,7 @@ def render_guardados(page: ft.Page, cambiar_pantalla=None):
         if foto_perfil and foto_perfil.lower() != "none":
             img_url = f"{base_url}{foto_perfil}"
         else:
+
             img_url = f"{base_url}defecto.png"  # imagen por defecto
 
         return ft.Container(
@@ -199,10 +200,12 @@ def render_guardados(page: ft.Page, cambiar_pantalla=None):
                                                 [
                                                     menu_solo_reportar,  # Menú de opciones
                                                     ft.IconButton(
-                                                        icon=ft.Icons.DELETE_OUTLINE,  # Icono de bote de basura
+                                                        icon=ft.Icons.DELETE_OUTLINE,
                                                         icon_color="#3EAEB1",
                                                         icon_size=24,
-                                                        on_click=lambda e: eliminar_guardado(page,publicacion_id)  # solo visual
+                                                        on_click=lambda e: mostrar_modal_eliminar_guardado(
+                                                            page, publicacion_id, eliminar_guardado
+                                                        )
                                                     ),
                                                 ],
                                                 spacing=8,
@@ -303,3 +306,92 @@ def render_guardados(page: ft.Page, cambiar_pantalla=None):
     )
     recargar_guardados()
     page.update()  #  aseguramos refresco de toda la UI
+
+
+def mostrar_modal_eliminar_guardado(page, publicacion_id, eliminar_guardado_callback):
+    """Muestra un modal de confirmación para eliminar guardado"""
+
+    def confirmar_eliminar(e):
+        modal.open = False
+        page.update()
+        eliminar_guardado_callback(page, publicacion_id)
+
+    def cancelar(e):
+        modal.open = False
+        page.update()
+
+    # Botón aceptar (color #3EAEB1)
+    btn_aceptar = ft.ElevatedButton(
+        "Aceptar",
+        bgcolor="#3EAEB1",
+        color=ft.Colors.WHITE,
+        width=110,
+        style=ft.ButtonStyle(
+            shape=ft.RoundedRectangleBorder(radius=20),
+            overlay_color={"": "#2F8F91"},
+            text_style={"": ft.TextStyle(
+                font_family="Oswald",
+                size=14,
+                weight=ft.FontWeight.W_600,
+                color="white"
+            )}
+        ),
+        on_click=confirmar_eliminar,
+    )
+
+    # Botón cancelar (gris claro con borde)
+    btn_cancelar = ft.OutlinedButton(
+        "Cancelar",
+        width=110,
+        style=ft.ButtonStyle(
+            shape=ft.RoundedRectangleBorder(radius=20),
+            bgcolor="#F2F2F2",
+            color="black",
+            text_style={"": ft.TextStyle(
+                font_family="Oswald",
+                size=14,
+                weight=ft.FontWeight.W_500,
+                color="black"
+            )}
+        ),
+        on_click=cancelar,
+    )
+
+    # Modal con mismo estilo que cerrar sesión
+    modal = ft.AlertDialog(
+        modal=False,
+        bgcolor="#FFFFFF",
+        content=ft.Container(
+            width=320,
+            bgcolor="#FFFFFF",
+            border_radius=20,
+            content=ft.Column(
+                [
+                    ft.Text(
+                        "¿Deseas eliminar esta publicación?",
+                        size=20,
+                        weight=ft.FontWeight.BOLD,
+                        text_align="center",
+                        color="#666666",  # gris css en Flet
+                        font_family="Oswald"
+                    ),
+                    ft.Row(
+                        [btn_aceptar, btn_cancelar],
+                        alignment=ft.MainAxisAlignment.CENTER,
+                        spacing=15
+                    )
+                ],
+                tight=True,
+                horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                spacing=20
+            )
+        ),
+        actions_alignment=ft.MainAxisAlignment.END,
+    )
+
+    if modal not in page.overlay:
+        page.overlay.append(modal)
+
+    modal.open = True
+    page.update()
+

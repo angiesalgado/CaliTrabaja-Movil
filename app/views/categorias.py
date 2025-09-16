@@ -1,6 +1,7 @@
 import flet as ft
 from app.components.nav import nav_bar
 from app.components.menu_inferior import menu_inferior
+from app.components.ModalAcceso import mostrar_modal_acceso
 
 def pantalla_categorias(page: ft.Page, cambiar_pantalla):
     page.controls.clear()
@@ -96,13 +97,14 @@ def pantalla_categorias(page: ft.Page, cambiar_pantalla):
             if token:
                 cambiar_pantalla("mensajes")
             else:
-                print("Inicia sesion o registrate")
+                mostrar_modal_acceso(page, cambiar_pantalla)
+
         elif index == 3:  # Guardados
             token = obtener_token(page)
             if token:
                 cambiar_pantalla("guardados")
             else:
-                print("Inicia sesion o registrate")
+                mostrar_modal_acceso(page, cambiar_pantalla)
         elif index == 4:  # Menú
                 cambiar_pantalla("menu")
 

@@ -15,6 +15,13 @@ from app.views.inicio_sesion import inicio_sesion
 from app.views.registrarse import pantalla_registro
 from app.views.recuperar_contrasena import recuperar_contrasena
 from app.views.cambiar_contrasena import cambiar_contrasena
+from app.components.ModalAcceso import mostrar_modal_acceso
+
+
+def obtener_token(page):
+    return getattr(page, "session_token", None)
+
+
 def main(page: ft.Page):
     page.title = "Mi App"
     page.bgcolor = "#FFFFFF"
@@ -37,16 +44,23 @@ def main(page: ft.Page):
         page.bottom_appbar = None
         page.overlay.clear()
         page.update()
+        token = obtener_token(page)
 
         if destino == "inicio":
             pantalla_inicio(page, cambiar_pantalla)
         elif destino == "menu":
             pantalla_menu(page, cambiar_pantalla)
         elif destino == "mensajes":
+            if token is None:  # 🔹 sin sesión → mostrar modal
+                mostrar_modal_acceso(page, cambiar_pantalla)
+                return
             pantalla_mensajes(page, cambiar_pantalla)
         elif destino == "categorias":
             pantalla_categorias(page, cambiar_pantalla)
         elif destino == "guardados":
+            if token is None:  # 🔹 sin sesión → mostrar modal
+                mostrar_modal_acceso(page, cambiar_pantalla)
+                return
             render_guardados(page, cambiar_pantalla)
         elif destino == "publicaciones":
             publicaciones(page, cambiar_pantalla, origen=origen)

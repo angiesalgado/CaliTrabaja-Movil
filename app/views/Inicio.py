@@ -12,6 +12,8 @@ from app.components.ModalTarjetaCompleta import ModalTarjetaCompleta
 from app.components.MenuTarjetasOpciones import menu_opciones
 from app.API_services.traer_publicaciones import traer_publicaciones_usu
 from app.API_services.datos_usuario import obtener_datos
+from app.components.ModalAcceso import mostrar_modal_acceso
+
 
 def pantalla_inicio(page: ft.Page, cambiar_pantalla):
 
@@ -671,17 +673,19 @@ def pantalla_inicio(page: ft.Page, cambiar_pantalla):
         elif index == 1:  # Categorias
             cambiar_pantalla("categorias")
         elif index == 2:  # Mensajes
-            token =obtener_token(page)
+            token = obtener_token(page)
             if token:
                 cambiar_pantalla("mensajes")
             else:
-                print("Inicia sesion o registrate")
+                mostrar_modal_acceso(page, cambiar_pantalla)
+
         elif index == 3:  # Guardados
             token = obtener_token(page)
             if token:
                 cambiar_pantalla("guardados")
             else:
-                print("Inicia sesion o registrate")
+                mostrar_modal_acceso(page, cambiar_pantalla)
+
         elif index == 4:  # Menú
                 cambiar_pantalla("menu")
 

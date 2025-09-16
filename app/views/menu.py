@@ -66,11 +66,7 @@ def pantalla_menu(page: ft.Page, cambiar_pantalla):
         elif item_text == "Configuración":
             configuracion.pantalla_configuracion(page, cambiar_pantalla)
         elif item_text == "Cerrar sesión":
-            cerrar_sesion_api(token)
-            page.session_token = None
-            mostrar_snackbar("Sesión cerrada correctamente.", exito=True)
-            page.clean()
-            Inicio.pantalla_inicio(page, cambiar_pantalla)
+            mostrar_modal_cerrar_sesion(page, token, cambiar_pantalla)
 
         build_side_menu()
         update_bottom_bar()
@@ -171,5 +167,108 @@ def pantalla_menu(page: ft.Page, cambiar_pantalla):
         elevation=0
     )
 
+
     page.add(layout)
+    page.update()
+
+def mostrar_modal_cerrar_sesion(page, token, cambiar_pantalla):
+    """Muestra un modal de confirmación para cerrar sesión"""
+
+    def cerrar_sesion(e):
+        from . import Inicio
+        cerrar_sesion_api(token)   # Llamar API
+        page.session_token = None
+        modal.open = False
+        page.update()
+
+        # Redirige al inicio
+        page.clean()
+        Inicio.pantalla_inicio(page, cambiar_pantalla)
+
+    def cancelar(e):
+        modal.open = False
+        page.update()
+
+    # Botón cerrar sesión (rojo estilo consistente con ModalReporte)
+    btn_cerrar = ft.ElevatedButton(
+        "Cerrar sesión",
+        bgcolor="#E74C3C",
+        color=ft.Colors.WHITE,
+        width=110,
+        style=ft.ButtonStyle(
+            shape=ft.RoundedRectangleBorder(radius=20),
+            overlay_color={"": "#C0392B"},
+            text_style={"": ft.TextStyle(
+                font_family="Oswald",
+                size=14,
+                weight=ft.FontWeight.W_600,
+                color="white"
+            )}
+        ),
+        on_click=cerrar_sesion,
+    )
+
+    # Botón cancelar (gris claro, borde, igual al reporte)
+    btn_cancelar = ft.OutlinedButton(
+        "Cancelar",
+        width=110,
+        style=ft.ButtonStyle(
+            shape=ft.RoundedRectangleBorder(radius=20),
+            bgcolor="#f8f8f8",
+            color="black",
+            side=ft.BorderSide(1, "#E5E5E5"),
+            text_style={"": ft.TextStyle(
+                font_family="Oswald",
+                size=14,
+                weight=ft.FontWeight.W_500,
+                color="black"
+            )}
+        ),
+        on_click=cancelar,
+    )
+
+    # 🔹 Modal con mismo estilo que ModalReporte pero más compacto
+    modal = ft.AlertDialog(
+        modal=False,  # se puede cerrar tocando afuera
+        bgcolor="#FFFFFF",
+        content=ft.Container(
+            width=320,
+            bgcolor="#FFFFFF",
+            border_radius=20,
+            content=ft.Column(
+                [
+                    ft.Text(
+                        "¿Seguro que quieres salir?",
+                        size=20,
+                        weight=ft.FontWeight.BOLD,
+                        text_align="center",
+                        color="black",
+                        font_family="Oswald"
+                    ),
+                    ft.Text(
+                        "¡Te esperamos de vuelta!",
+                        size=14,
+                        weight=ft.FontWeight.BOLD,
+                        text_align="center",
+                        bgcolor="#333",
+                        font_family="Oswald"
+                    ),
+                    ft.Row(
+                        [btn_cerrar, btn_cancelar],
+                        alignment=ft.MainAxisAlignment.CENTER,
+                        spacing=15
+                    )
+                ],
+                tight=True,
+                horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                spacing=20
+            )
+        ),
+        actions_alignment=ft.MainAxisAlignment.END,
+    )
+
+    if modal not in page.overlay:
+        page.overlay.append(modal)
+
+    modal.open = True
     page.update()

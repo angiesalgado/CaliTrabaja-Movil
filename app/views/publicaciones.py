@@ -6,6 +6,8 @@ from app.components.menu_inferior import menu_inferior
 from app.components.ModalTarjetaCompleta import ModalTarjetaCompleta
 from app.components.MenuTarjetasOpciones import menu_opciones
 from app.API_services.traer_publicaciones import traer_publicaciones_usu
+from app.components.ModalAcceso import mostrar_modal_acceso
+
 
 def custom_expansion(page, title, controls_list):
     toggle_icon = ft.Icon(name=ft.Icons.KEYBOARD_ARROW_DOWN, color="#3EAEB1")
@@ -483,18 +485,19 @@ def publicaciones(page: ft.Page, cambiar_pantalla, origen=None):
             cambiar_pantalla("inicio")
         elif index == 1:
             cambiar_pantalla("categorias")
-        elif index == 2:
+        elif index == 2:  # Mensajes
             token = obtener_token(page)
             if token:
                 cambiar_pantalla("mensajes")
             else:
-                print("Inicia sesion o registrate")
-        elif index == 3:
+                mostrar_modal_acceso(page, cambiar_pantalla)
+
+        elif index == 3:  # Guardados
             token = obtener_token(page)
             if token:
                 cambiar_pantalla("guardados")
             else:
-                print("Inicia sesion o registrate")
+                mostrar_modal_acceso(page, cambiar_pantalla)
         elif index == 4:
             cambiar_pantalla("menu")
 

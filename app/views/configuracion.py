@@ -280,44 +280,57 @@ def pantalla_configuracion(page: ft.Page, cambiar_pantalla=None):
         page.controls.clear()
         page.bottom_appbar = None
         confirmar_field = password_field_factory()
+        error_text = ft.Text(
+            value="",
+            color="red",
+            size=14,
+            visible=False  # oculto por defecto
+        )
+
+        # 🔹 Cuando el usuario escriba o borre algo en el campo
+        def limpiar_error(e):
+            if error_text.visible:  # Solo si el error está visible
+                error_text.visible = False
+                error_text.value = ""
+                page.update()
+
+        confirmar_field.on_change = limpiar_error  # 👉 se asocia aquí
 
         def deshabilitar_cuenta(e):
-
             token = obtener_token(page)
             if not token:
                 print("Debes iniciar sesion o registrarte")
-
-            contraseña = confirmar_field.value.strip() if confirmar_field.value else None
-
-            if  not contraseña :
-                print("Debes ingresar la contraseña")
                 return
 
-            print(f"CONTRASEÑA ACTUAL: {contraseña}")
+            contraseña = confirmar_field.value.strip() if confirmar_field.value else None
+            if not contraseña:
+                error_text.value = "Debes ingresar la contraseña"
+                error_text.visible = True
+                page.update()
+                return
 
-            datos = {}
-
-            if contraseña:
-                 datos["contrasena"] = contraseña
-
-
-
+            # 🔹 Validar contraseña con backend (sin eliminar todavía)
+            datos = {"contrasena": contraseña}
             respuesta = deshabilitar_cuenta_usu(token, datos)
 
-            if respuesta.get("message"):
-                print(respuesta["message"])
-                cerrar_sesion_api(token)
-                page.session_token = None
-                Inicio.pantalla_inicio(page, cambiar_pantalla)
+            if respuesta.get("error") or respuesta.get("success") is False:
+                # Contraseña incorrecta
+                error_text.value = "Contraseña incorrecta"
+                error_text.visible = True
                 page.update()
+                return
 
-
+            # 🔹 Si es correcta -> guardar y abrir modal
+            page.validar_contraseña_eliminar = contraseña
+            error_text.visible = False
+            mostrar_modal_eliminar_cuenta(page, token, cambiar_pantalla)
 
         page.add(
             ft.Column(
                 expand=True,
                 controls=[
-                    nav_configuracion(page, page.width, "Eliminar cuenta", volver_callback=lambda e: mostrar_configuracion()),  # 🔹 vuelve a Configuración
+                    nav_configuracion(page, page.width, "Eliminar cuenta",
+                                      volver_callback=lambda e: mostrar_configuracion()),
                     ft.Container(
                         expand=True,
                         width=float("inf"),
@@ -326,8 +339,7 @@ def pantalla_configuracion(page: ft.Page, cambiar_pantalla=None):
                         content=ft.Column(
                             spacing=20,
                             horizontal_alignment=(
-                                ft.CrossAxisAlignment.START if page.width < 500 else ft.CrossAxisAlignment.CENTER
-                            ),
+                                ft.CrossAxisAlignment.START if page.width < 500 else ft.CrossAxisAlignment.CENTER),
                             controls=[
                                 ft.Text(
                                     "Esta acción es permanente y no se puede deshacer.\n"
@@ -338,6 +350,7 @@ def pantalla_configuracion(page: ft.Page, cambiar_pantalla=None):
                                 ),
                                 ft.Text("Confirmar contraseña", size=16, weight=ft.FontWeight.BOLD, color="#000000"),
                                 confirmar_field,
+                                error_text,
                                 ft.Row(
                                     spacing=10,
                                     alignment=ft.MainAxisAlignment.CENTER,
@@ -348,7 +361,7 @@ def pantalla_configuracion(page: ft.Page, cambiar_pantalla=None):
                                             color="white",
                                             width=170,
                                             style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=20)),
-                                            on_click= deshabilitar_cuenta
+                                            on_click=deshabilitar_cuenta
                                         ),
                                         ft.ElevatedButton(
                                             "Cancelar",
@@ -462,3 +475,116 @@ def pantalla_configuracion(page: ft.Page, cambiar_pantalla=None):
 
     # -------- INICIO --------
     mostrar_configuracion()
+
+
+def mostrar_modal_eliminar_cuenta(page, token, cambiar_pantalla):
+    """Muestra modal confirmación para eliminar cuenta"""
+
+    def confirmar_eliminacion(e):
+        # 🔹 Obtener la contraseña guardada
+        contraseña = getattr(page, "validar_contraseña_eliminar", None)
+
+        datos = {"contrasena": contraseña}
+        respuesta = deshabilitar_cuenta_usu(token, datos)
+
+        if respuesta.get("error") or respuesta.get("success") is False:
+            print("Error al eliminar cuenta desde modal:", respuesta)
+            return
+
+        # 🔹 Si fue correcto, cerramos sesión
+        cerrar_sesion_api(token)
+        page.session_token = None
+        modal.open = False
+        page.update()
+
+        from . import Inicio
+        page.clean()
+        Inicio.pantalla_inicio(page, cambiar_pantalla)
+
+    def cancelar(e):
+        modal.open = False
+        page.update()
+
+    # Botón rojo: eliminar
+    btn_eliminar = ft.ElevatedButton(
+        "Eliminar cuenta",
+        bgcolor="#E74C3C",
+        color=ft.Colors.WHITE,
+        width=150,
+        style=ft.ButtonStyle(
+            shape=ft.RoundedRectangleBorder(radius=20),
+            overlay_color={"": "#C0392B"},
+            text_style={"": ft.TextStyle(
+                font_family="Oswald",
+                size=14,
+                weight=ft.FontWeight.W_600,
+                color="white"
+            )}
+        ),
+        on_click=confirmar_eliminacion,
+    )
+
+    # Botón gris: cancelar
+    btn_cancelar = ft.OutlinedButton(
+        "Cancelar",
+        width=110,
+        style=ft.ButtonStyle(
+            shape=ft.RoundedRectangleBorder(radius=20),
+            bgcolor="#f8f8f8",
+            color="black",
+            side=ft.BorderSide(1, "#E5E5E5"),
+            text_style={"": ft.TextStyle(
+                font_family="Oswald",
+                size=14,
+                weight=ft.FontWeight.W_500,
+                color="black"
+            )}
+        ),
+        on_click=cancelar,
+    )
+
+    # Modal
+    modal = ft.AlertDialog(
+        modal=False,
+        bgcolor="#FFFFFF",
+        content=ft.Container(
+            width=320,
+            bgcolor="#FFFFFF",
+            border_radius=20,
+            content=ft.Column(
+                [
+                    ft.Text(
+                        "¿Seguro que quieres eliminar tu cuenta?",
+                        size=20,
+                        weight=ft.FontWeight.BOLD,
+                        text_align="center",
+                        color="black",
+                        font_family="Oswald"
+                    ),
+                    ft.Text(
+                        "Esta acción es irreversible.",
+                        size=14,
+                        weight=ft.FontWeight.BOLD,
+                        text_align="center",
+                        bgcolor="#333",
+                        font_family="Oswald"
+                    ),
+                    ft.Row(
+                        [btn_eliminar, btn_cancelar],
+                        alignment=ft.MainAxisAlignment.CENTER,
+                        spacing=15
+                    )
+                ],
+                tight=True,
+                horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                spacing=20
+            )
+        ),
+        actions_alignment=ft.MainAxisAlignment.END,
+    )
+
+    if modal not in page.overlay:
+        page.overlay.append(modal)
+
+    modal.open = True
+    page.update()
