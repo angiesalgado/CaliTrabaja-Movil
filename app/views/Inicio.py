@@ -584,7 +584,7 @@ def pantalla_inicio(page: ft.Page, cambiar_pantalla):
             # Carrusel
             ft.Container(
                 content=ft.Row(
-                    controls=[tarjeta_horizontal(**p) for p in aleatorias],
+                    controls=[tarjeta_horizontal(**p) for p in recientes],
                     spacing=7,
                     scroll=ft.ScrollMode.HIDDEN
                 ),
@@ -655,7 +655,7 @@ def pantalla_inicio(page: ft.Page, cambiar_pantalla):
             # Carrusel
             ft.Container(
                 content=ft.Row(
-                    controls=[tarjeta_horizontal(**p) for p in recientes],
+                    controls=[tarjeta_horizontal(**p) for p in aleatorias],
                     spacing=7,
                     scroll=ft.ScrollMode.HIDDEN
                 ),
