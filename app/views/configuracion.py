@@ -36,7 +36,7 @@ def nav_configuracion(page: ft.Page, page_width: float, titulo="Configuración",
         right=False,
         content=ft.Container(
             width=float("inf"),
-            height=100,
+            height=80,
             bgcolor="#F5F5F5",
             padding=ft.padding.symmetric(horizontal=10),
             margin=0,
