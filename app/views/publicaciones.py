@@ -390,7 +390,7 @@ def publicaciones(page: ft.Page, cambiar_pantalla, origen=None):
                     ft.Container(
                         content=ft.TextButton(
                             "Ver más" if mostrar_boton else "",
-                            on_click=(lambda e: abrir_modal_detalle(nombre, profesion, descripcion, costo,
+                            on_click=(lambda e: abrir_modal_detalle(foto_perfil, nombre, profesion, descripcion, costo,
                                                                     calificacion)) if mostrar_boton else None,
                             style=ft.ButtonStyle(
                                 color=PRIMARY_COLOR if mostrar_boton else "transparent",

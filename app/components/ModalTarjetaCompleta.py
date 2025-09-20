@@ -9,7 +9,7 @@ class ModalTarjetaCompleta:
             actions=[]
         )
 
-    def set_content(self, nombre, profesion, descripcion, costo, calificacion, page: ft.Page = None):
+    def set_content(self, foto_perfil, nombre, profesion, descripcion, costo, calificacion, page: ft.Page = None):
 
         stars = ft.Row(
             [
@@ -34,6 +34,15 @@ class ModalTarjetaCompleta:
 
         es_pantalla_pequena = page and page.width < 480
 
+        base_url = "http://localhost:5000/static/uploads/perfiles/"
+
+        if foto_perfil and foto_perfil.lower() != "none":
+            img_url = f"{base_url}{foto_perfil}"
+        else:
+            img_url = f"{base_url}defecto.png"  # imagen por defecto
+
+        print(f"RUTA IMAGEN {img_url}")
+
         tarjeta_completa = ft.Container(
             width=380 if not es_pantalla_pequena else ft.infinity,
             padding=ft.padding.only(top=5, left=15, right=15, bottom=10),
@@ -49,6 +58,7 @@ class ModalTarjetaCompleta:
                         alignment=ft.MainAxisAlignment.END
                     ),
                     ft.CircleAvatar(
+                        foreground_image_src=img_url,
                         radius=36 if es_pantalla_pequena else 38,
                         bgcolor=ft.Colors.GREY_300
                     ),

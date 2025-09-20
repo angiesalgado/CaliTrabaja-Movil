@@ -48,9 +48,9 @@ def pantalla_inicio(page: ft.Page, cambiar_pantalla):
     modal_detalle = ModalTarjetaCompleta()
     page.overlay.append(modal_detalle.dialog)
 
-    def abrir_modal_detalle(nombre, profesion, descripcion, costo, calificacion):
+    def abrir_modal_detalle(foto_perfil, nombre, profesion, descripcion, costo, calificacion):
         print("CLICK -> abrir_modal_detalle:", nombre)  # <-- mira la consola donde corres Flet
-        modal_detalle.set_content(nombre, profesion, descripcion, costo, calificacion)
+        modal_detalle.set_content(foto_perfil, nombre, profesion, descripcion, costo, calificacion)
         page.dialog = modal_detalle.dialog
         modal_detalle.dialog.open = True
         page.update()
@@ -513,7 +513,7 @@ def pantalla_inicio(page: ft.Page, cambiar_pantalla):
                     ft.Container(
                         content=ft.TextButton(
                             "Ver más" if mostrar_boton else "",
-                            on_click=(lambda e: abrir_modal_detalle(nombre, categoria, descripcion, costo,
+                            on_click=(lambda e: abrir_modal_detalle(foto_perfil, nombre, categoria, descripcion, costo,
                                                                     calificacion)) if mostrar_boton else None,
                             style=ft.ButtonStyle(
                                 color=PRIMARY_COLOR if mostrar_boton else "transparent",
