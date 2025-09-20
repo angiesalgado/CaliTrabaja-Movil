@@ -1,5 +1,7 @@
 import flet as ft
 from datetime import datetime, timedelta
+from app.components.ModalReporte import ModalReporte
+
 
 # -------------------
 # NAV SUPERIOR DE CHATS (gris)
@@ -16,7 +18,7 @@ def nav_chats(page: ft.Page, volver_callback=None):
         content=ft.Container(
             width=float("inf"),
             height=80,
-            bgcolor="#F5F5F5",  # fondo gris claro
+            bgcolor="#F5F5F5",
             padding=ft.padding.only(left=-10, right=0),
             content=ft.Row(
                 alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
@@ -40,6 +42,7 @@ def nav_chats(page: ft.Page, volver_callback=None):
         )
     )
 
+
 # -------------------
 # Función para formatear hora / fecha estilo WhatsApp
 # -------------------
@@ -54,10 +57,19 @@ def formatear_fecha_hora(fecha: datetime):
     else:
         return fecha.strftime("%d/%m/%y")
 
+
 # -------------------
 # Pantalla: Lista de chats
 # -------------------
 def lista_chats(page: ft.Page):
+
+    # ---------- Instanciamos el modal de reportar ----------
+    modal_reporte = ModalReporte(
+        on_guardar=lambda desc: print(f"Reporte guardado: {desc}"),
+        on_cancelar=lambda: print("Reporte cancelado")
+    )
+    if modal_reporte.dialog not in page.overlay:
+        page.overlay.append(modal_reporte.dialog)
 
     def abrir_chat(e):
         contacto = e.control.data
@@ -65,10 +77,15 @@ def lista_chats(page: ft.Page):
         page.go("/chat")
 
     def reportar(e):
-        print(f"Reportar chat con: {e.control.data['nombre']}")
+        contacto = e.control.data
+        print(f"Abriendo modal de reporte para: {contacto['nombre']}")
+        page.dialog = modal_reporte.dialog
+        modal_reporte.dialog.open = True
+        page.update()
 
     def eliminar(e):
-        print(f"Eliminar chat con: {e.control.data['nombre']}")
+        contacto = e.control.data
+        print(f"Eliminar chat con: {contacto['nombre']}")
 
     chats = [
         {
@@ -165,6 +182,7 @@ def lista_chats(page: ft.Page):
         ]
     )
 
+
 # -------------------
 # Pantalla: Chat individual
 # -------------------
@@ -175,29 +193,63 @@ def chat_view(page: ft.Page):
 
     def enviar_mensaje(e):
         if caja_mensaje.value.strip() != "":
-            hora_envio = datetime.now().strftime("%H:%M")
+            texto = caja_mensaje.value.strip()
+
+            # Formato estándar Windows
+            hora_envio = datetime.now().strftime("%I:%M %p")  # ej: 04:55 PM
+            hora_envio = hora_envio.lstrip("0").replace("AM", "a. m.").replace("PM", "p. m.")
+
+            # -------- calcular ancho dinámico de la burbuja (estimación)
+            avg_char_px = 20  # px aproximados por carácter
+            padding_for_time_and_inner = 7  # espacio para padding interno + hora
+            min_bubble = 50  # ancho mínimo (px) para burbuja corta
+            max_bubble = 250  # ancho máximo (px) de la burbuja
+
+            estimated_width = len(texto) * avg_char_px + padding_for_time_and_inner
+            bubble_width = max(min_bubble, min(max_bubble, int(estimated_width)))
+
+            # ancho útil para el texto dentro de la burbuja (dejamos espacio para la hora)
+            text_width = max(33, bubble_width - 53)
+            # -------------------------------------------------------
+
             mensajes.controls.append(
                 ft.Row(
                     [
                         ft.Container(
-                            content=ft.Column(
-                                [
-                                    ft.Text(caja_mensaje.value, color="white"),
-                                    ft.Text(hora_envio, size=10, color="white", text_align="end"),
-                                ],
-                                spacing=2,
-                                tight=True,
+                            content=ft.Row(
+                                spacing=5,
+                                vertical_alignment="end",  # alinea la hora con el último renglón
+                                controls=[
+                                    ft.Text(
+                                        texto,
+                                        color="White",
+                                        size=14,
+                                        no_wrap=False,  # permite saltos de línea
+                                        max_lines=None,
+                                        width=text_width  # ancho del texto (permite wrap)
+                                    ),
+                                    ft.Container(
+                                        content=ft.Text(
+                                            hora_envio,
+                                            size=10,
+                                            color="White",
+                                        ),
+                                        margin=ft.margin.only(left=-5),
+                                    ),
+                                ]
                             ),
                             bgcolor="#3EAEB1",
                             padding=10,
                             border_radius=15,
-                            width=220,
+                            width=bubble_width,  # ancho de burbuja según el texto
                         )
                     ],
                     alignment="end"
                 )
             )
+
             caja_mensaje.value = ""
+            caja_mensaje.update()
             mensajes.update()
 
     header = ft.SafeArea(
@@ -208,7 +260,7 @@ def chat_view(page: ft.Page):
         content=ft.Container(
             content=ft.Row(
                 [
-                    ft.IconButton(icon=ft.Icons.ARROW_BACK, icon_color="#3EAEB1", on_click=lambda e: page.go("/")),
+                    ft.IconButton(icon=ft.Icons.CHEVRON_LEFT, icon_size=50, icon_color="#3EAEB1", on_click=lambda e: page.go("/")),
                     ft.CircleAvatar(foreground_image_src=contacto["foto"]),
                     ft.Text(contacto["nombre"], size=18, weight="bold", color="#3EAEB1"),
                 ],
@@ -252,6 +304,7 @@ def chat_view(page: ft.Page):
         ]
     )
 
+
 # -------------------
 # App principal con rutas
 # -------------------
@@ -267,6 +320,7 @@ def main(page: ft.Page):
 
     page.on_route_change = route_change
     page.go("/")
+
 
 if __name__ == "__main__":
     ft.app(target=main, view=ft.AppView.WEB_BROWSER, host="0.0.0.0", port=9000)
