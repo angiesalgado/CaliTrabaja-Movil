@@ -1,6 +1,7 @@
 import flet as ft
 from datetime import datetime, timedelta
 from app.components.ModalReporte import ModalReporte
+from app.components.menu_inferior import menu_inferior   # ✅ import del menú
 
 
 # -------------------
@@ -61,9 +62,7 @@ def formatear_fecha_hora(fecha: datetime):
 # -------------------
 # Pantalla: Lista de chats
 # -------------------
-def lista_chats(page: ft.Page):
-
-    # ---------- Instanciamos el modal de reportar ----------
+def lista_chats(page: ft.Page, cambiar_pantalla=None):
     modal_reporte = ModalReporte(
         on_guardar=lambda desc: print(f"Reporte guardado: {desc}"),
         on_cancelar=lambda: print("Reporte cancelado")
@@ -87,6 +86,7 @@ def lista_chats(page: ft.Page):
         contacto = e.control.data
         print(f"Eliminar chat con: {contacto['nombre']}")
 
+    # Ejemplo de datos
     chats = [
         {
             "nombre": "Juan Pérez",
@@ -117,7 +117,6 @@ def lista_chats(page: ft.Page):
                     alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
                     vertical_alignment=ft.CrossAxisAlignment.CENTER,
                     controls=[
-                        # Avatar + Nombre + Último mensaje
                         ft.Row(
                             spacing=10,
                             controls=[
@@ -132,14 +131,13 @@ def lista_chats(page: ft.Page):
                                 )
                             ]
                         ),
-                        # Hora + Menú en fila (hora antes de los puntos)
                         ft.Row(
                             spacing=6,
                             vertical_alignment=ft.CrossAxisAlignment.CENTER,
                             controls=[
                                 ft.Text(formatear_fecha_hora(c["hora"]), size=11, color=ft.Colors.GREY),
                                 ft.PopupMenuButton(
-                                    icon=ft.Icons.MORE_HORIZ,   # tres puntos horizontales
+                                    icon=ft.Icons.MORE_HORIZ,
                                     items=[
                                         ft.PopupMenuItem(
                                             content=ft.Row(
@@ -172,45 +170,75 @@ def lista_chats(page: ft.Page):
             )
         )
 
+    # callback menú inferior
+    def on_bottom_nav_click(index):
+        if callable(cambiar_pantalla):
+            if index == 0:
+                cambiar_pantalla("inicio")
+            elif index == 1:
+                cambiar_pantalla("categorias")
+            elif index == 2:
+                cambiar_pantalla("mensajes")
+            elif index == 3:
+                cambiar_pantalla("guardados")
+            elif index == 4:
+                cambiar_pantalla("menu")
+        else:
+            if index == 0:
+                page.go("/")
+            elif index == 1:
+                page.go("/categorias")
+            elif index == 2:
+                page.go("/mensajes")
+            elif index == 3:
+                page.go("/guardados")
+            elif index == 4:
+                page.go("/menu")
+
+    # callback del botón volver
+    def volver_a_inicio_event(e):
+        if callable(cambiar_pantalla):
+            cambiar_pantalla("inicio")
+        else:
+            page.go("/")
+
     return ft.View(
-        "/",
+        "/mensajes",
         bgcolor="white",
         padding=0,
         controls=[
-            nav_chats(page, volver_callback=lambda e: print("Ya estás en la lista ")),
-            ft.Column(items, expand=True, scroll="auto")
+            nav_chats(page, volver_callback=volver_a_inicio_event),
+            ft.Column(items, expand=True, scroll="auto"),
+            ft.Container(
+                content=menu_inferior(2, on_bottom_nav_click),
+                bgcolor="white",
+                padding=5
+            )
         ]
     )
 
 
 # -------------------
-# Pantalla: Chat individual
+# Pantalla: Chat individual (❌ sin menú inferior)
 # -------------------
 def chat_view(page: ft.Page):
-    contacto = page.session.get("contacto")
-
+    contacto = page.session.get("contacto") or {"nombre": "Contacto", "foto": None}
     mensajes = ft.Column(expand=True, spacing=10, scroll="auto")
 
     def enviar_mensaje(e):
         if caja_mensaje.value.strip() != "":
             texto = caja_mensaje.value.strip()
-
-            # Formato estándar Windows
-            hora_envio = datetime.now().strftime("%I:%M %p")  # ej: 04:55 PM
+            hora_envio = datetime.now().strftime("%I:%M %p")
             hora_envio = hora_envio.lstrip("0").replace("AM", "a. m.").replace("PM", "p. m.")
 
-            # -------- calcular ancho dinámico de la burbuja (estimación)
-            avg_char_px = 20  # px aproximados por carácter
-            padding_for_time_and_inner = 7  # espacio para padding interno + hora
-            min_bubble = 50  # ancho mínimo (px) para burbuja corta
-            max_bubble = 250  # ancho máximo (px) de la burbuja
+            avg_char_px = 20
+            padding_for_time_and_inner = 7
+            min_bubble = 50
+            max_bubble = 250
 
             estimated_width = len(texto) * avg_char_px + padding_for_time_and_inner
             bubble_width = max(min_bubble, min(max_bubble, int(estimated_width)))
-
-            # ancho útil para el texto dentro de la burbuja (dejamos espacio para la hora)
             text_width = max(33, bubble_width - 53)
-            # -------------------------------------------------------
 
             mensajes.controls.append(
                 ft.Row(
@@ -218,15 +246,15 @@ def chat_view(page: ft.Page):
                         ft.Container(
                             content=ft.Row(
                                 spacing=5,
-                                vertical_alignment="end",  # alinea la hora con el último renglón
+                                vertical_alignment="end",
                                 controls=[
                                     ft.Text(
                                         texto,
                                         color="White",
                                         size=14,
-                                        no_wrap=False,  # permite saltos de línea
+                                        no_wrap=False,
                                         max_lines=None,
-                                        width=text_width  # ancho del texto (permite wrap)
+                                        width=text_width
                                     ),
                                     ft.Container(
                                         content=ft.Text(
@@ -241,7 +269,7 @@ def chat_view(page: ft.Page):
                             bgcolor="#3EAEB1",
                             padding=10,
                             border_radius=15,
-                            width=bubble_width,  # ancho de burbuja según el texto
+                            width=bubble_width,
                         )
                     ],
                     alignment="end"
@@ -260,9 +288,10 @@ def chat_view(page: ft.Page):
         content=ft.Container(
             content=ft.Row(
                 [
-                    ft.IconButton(icon=ft.Icons.CHEVRON_LEFT, icon_size=50, icon_color="#3EAEB1", on_click=lambda e: page.go("/")),
-                    ft.CircleAvatar(foreground_image_src=contacto["foto"]),
-                    ft.Text(contacto["nombre"], size=18, weight="bold", color="#3EAEB1"),
+                    ft.IconButton(icon=ft.Icons.CHEVRON_LEFT, icon_size=50, icon_color="#3EAEB1",
+                                  on_click=lambda e: page.go("/mensajes")),
+                    ft.CircleAvatar(foreground_image_src=contacto.get("foto")),
+                    ft.Text(contacto.get("nombre"), size=18, weight="bold", color="#3EAEB1"),
                 ],
                 spacing=10
             ),
@@ -303,24 +332,3 @@ def chat_view(page: ft.Page):
             input_box
         ]
     )
-
-
-# -------------------
-# App principal con rutas
-# -------------------
-def main(page: ft.Page):
-
-    def route_change(route):
-        page.views.clear()
-        if page.route == "/":
-            page.views.append(lista_chats(page))
-        elif page.route == "/chat":
-            page.views.append(chat_view(page))
-        page.update()
-
-    page.on_route_change = route_change
-    page.go("/")
-
-
-if __name__ == "__main__":
-    ft.app(target=main, view=ft.AppView.WEB_BROWSER, host="0.0.0.0", port=9000)

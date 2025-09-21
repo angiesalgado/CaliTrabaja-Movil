@@ -8,7 +8,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 from app.views.Inicio import pantalla_inicio
 from app.views.menu import pantalla_menu
 from app.views.categorias import pantalla_categorias
-from app.views.mensajes import pantalla_mensajes
+from app.views.mensajeria import lista_chats, chat_view   # 👈 usamos mensajeria.py
 from app.views.Guardados import render_guardados
 from app.views.publicaciones import publicaciones
 from app.views.inicio_sesion import inicio_sesion
@@ -50,11 +50,11 @@ def main(page: ft.Page):
             pantalla_inicio(page, cambiar_pantalla)
         elif destino == "menu":
             pantalla_menu(page, cambiar_pantalla)
-        elif destino == "mensajes":
+        elif destino == "mensajes":  # 👈 ahora redirige a la mensajería
             if token is None:  # 🔹 sin sesión → mostrar modal
                 mostrar_modal_acceso(page, cambiar_pantalla)
                 return
-            pantalla_mensajes(page, cambiar_pantalla)
+            page.go("/mensajes")
         elif destino == "categorias":
             pantalla_categorias(page, cambiar_pantalla)
         elif destino == "guardados":
@@ -76,6 +76,7 @@ def main(page: ft.Page):
     #  Pantalla inicial por defecto
     pantalla_inicio(page, cambiar_pantalla)
 
+    # 🔹 Manejo de rutas (para mensajería)
     def route_change(e: ft.RouteChangeEvent):
         print("Ruta recibida:", page.route, page.query)
 
@@ -84,11 +85,20 @@ def main(page: ft.Page):
             print(f"Token recibido: {token}")  # aquí luego lo mandas a la API
             cambiar_contrasena(page, cambiar_pantalla, token=token)
 
+        elif page.route == "/mensajes":
+            page.views.clear()
+            page.views.append(lista_chats(page))
+            page.update()
+
+        elif page.route == "/chat":
+            page.views.clear()
+            page.views.append(chat_view(page))
+            page.update()
+
     page.on_route_change = route_change
 
     # 🔹 Iniciar en la ruta actual (por si viene de un deep link)
     page.go(page.route)
-
 
 
 if __name__ == "__main__":
