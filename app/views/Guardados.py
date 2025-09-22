@@ -155,7 +155,7 @@ def render_guardados(page: ft.Page, cambiar_pantalla=None):
         respuesta = eliminar_guardado_usuario(token, datos)
 
         if respuesta.get("success"):
-            mostrar_snackbar(page, "Guardado eliminado correctamente.", exito=True)
+            mostrar_snackbar(page, "Publicación guardada eliminada correctamente.", exito=True)
             recargar_guardados()
         else:
             mostrar_snackbar(page, respuesta.get("message", "Error al eliminar guardado."), exito=False)

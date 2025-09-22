@@ -83,6 +83,7 @@ def mostrar_modal_acceso(page, cambiar_pantalla):
             ft.IconButton(
                 icon=ft.Icons.CLOSE,
                 icon_size=20,
+                icon_color="black",
                 tooltip="Cerrar",
                 on_click=cerrar_modal,
                 right=-10,

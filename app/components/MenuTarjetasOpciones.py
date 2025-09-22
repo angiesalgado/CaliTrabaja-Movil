@@ -4,24 +4,35 @@ from flet import Icons
 from app.API_services.guardar_publicacion import guardar_publicacion
 from app.API_services.guardar_reporte import enviar_reporte
 
-
-def menu_opciones(page, modal_reporte, text_color="#000000", incluir_guardar=None, incluir_reporte=None,  publicacion_id=None, usuario_id=None):
+def menu_opciones(
+    page,
+    modal_reporte,
+    text_color="#000000",
+    incluir_guardar=None,
+    incluir_reporte=None,
+    publicacion_id=None,
+    usuario_id=None,
+    on_click_opcion=None,      # callback para abrir modal de acceso si no hay sesión
+    on_guardar_click=None      # callback para actualizar UI al guardar
+):
 
     items = []
 
-    def  obtener_token(page):
+    def obtener_token(page):
         return getattr(page, "session_token", None)
 
     token = obtener_token(page)
-    datos={}
-
+    datos = {}
     if publicacion_id:
         datos["publicacion_id"] = publicacion_id
 
+    # --- Opción Guardar ---
+    if incluir_guardar:
+        def guardar_y_actualizar(e):
+            guardar_publicacion(token, datos)
+            if on_guardar_click:
+                on_guardar_click(e)
 
-
-    # Opción Guardar
-    if incluir_guardar ==True:
         items.append(
             ft.PopupMenuItem(
                 content=ft.Row(
@@ -32,10 +43,19 @@ def menu_opciones(page, modal_reporte, text_color="#000000", incluir_guardar=Non
                     spacing=6,
                     alignment="start",
                 ),
-                on_click=lambda e: guardar_publicacion(token, datos)
+                on_click=guardar_y_actualizar
             )
         )
-    # Función para reportar
+
+    # --- Función para cambiar a eliminar ---
+    def cambiar_guardar_a_eliminar(btn_row: ft.Row):
+        btn_row.controls[0].icon = Icons.DELETE
+        btn_row.controls[1].value = "Eliminar"
+        page.update()
+        if on_guardar_click:
+            on_guardar_click(btn_row)
+
+    # --- Opción Reportar ---
     def reportar():
         def guardar_reporte(descripcion):
             token = obtener_token(page)
@@ -51,9 +71,7 @@ def menu_opciones(page, modal_reporte, text_color="#000000", incluir_guardar=Non
         modal_reporte.on_guardar = guardar_reporte
         modal_reporte.show(page)
 
-
     if incluir_reporte:
-        # Opción Reportar
         items.append(
             ft.PopupMenuItem(
                 content=ft.Row(
@@ -68,6 +86,19 @@ def menu_opciones(page, modal_reporte, text_color="#000000", incluir_guardar=Non
             )
         )
 
+    # --- Botón de los 3 puntitos si no hay sesión ---
+    if token is None and on_click_opcion is not None:
+        return ft.Container(
+            content=ft.IconButton(
+                icon=ft.Icons.MORE_HORIZ,
+                icon_color=text_color,
+                on_click=on_click_opcion
+            ),
+            width=36,
+            height=36,
+        )
+
+    # --- Menú normal (guardar / reportar) ---
     return ft.Container(
         content=ft.PopupMenuButton(
             icon=ft.Icons.MORE_HORIZ,

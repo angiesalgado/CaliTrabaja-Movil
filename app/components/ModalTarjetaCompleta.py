@@ -3,7 +3,7 @@ import flet as ft
 class ModalTarjetaCompleta:
     def __init__(self):   # ✅ doble underscore
         self.dialog = ft.AlertDialog(
-            modal=True,
+            modal=False,
             bgcolor="transparent",
             content=ft.Container(),
             actions=[]

@@ -428,93 +428,118 @@ def pantalla_inicio(page: ft.Page, cambiar_pantalla):
     )
 
     # ---------------- FUNCIÓN TARJETA (ESTILO VERTICAL) ----------------
-    def tarjeta_horizontal(foto_perfil,nombre, categoria, descripcion, costo, calificacion, publicacion_id, usuario_id):
+
+    def tarjeta_horizontal(foto_perfil, nombre, categoria, descripcion, costo, calificacion, publicacion_id,
+                           usuario_id):
+
         mostrar_boton = len(descripcion) > 70
 
         stars = ft.Row(
-            [ft.Icon(ft.Icons.STAR if i < calificacion else ft.Icons.STAR_BORDER,
-                     color=PRIMARY_COLOR, size=14) for i in range(5)],
+            [
+                ft.Icon(
+                    ft.Icons.STAR if i < calificacion else ft.Icons.STAR_BORDER,
+                    color=PRIMARY_COLOR,
+                    size=14
+                )
+                for i in range(5)
+            ],
             spacing=0,
             alignment=ft.MainAxisAlignment.CENTER
         )
 
         token = obtener_token(page)
-        print(token)
 
-        if token == None:
-            menu = menu_opciones(page, modal_reporte, incluir_guardar=False, incluir_reporte=False)
-            print("Debes iniciar sesion o registrarte GUARDAR")
-
+        # Menú de opciones
+        if token is None:
+            # Usuario no logueado, menú abre modal de acceso
+            menu = menu_opciones(
+                page,
+                modal_reporte,
+                incluir_guardar=False,
+                incluir_reporte=False,
+                on_click_opcion=lambda e: mostrar_modal_acceso(page, cambiar_pantalla)
+            )
         else:
-            print(publicacion_id)
-            # Menú con Guardar + Reportar
-            menu = menu_opciones(page, modal_reporte, text_color=TEXT_COLOR, incluir_guardar=True, incluir_reporte=True, publicacion_id=publicacion_id, usuario_id=usuario_id)
-
-            print("PUBLICACION O REPORTE HECHO")
+            # Usuario logueado, menú completo
+            menu = menu_opciones(
+                page,
+                modal_reporte,
+                text_color=TEXT_COLOR,
+                incluir_guardar=True,
+                incluir_reporte=True,
+                publicacion_id=publicacion_id,
+                usuario_id=usuario_id
+            )
 
         base_url = "http://localhost:5000/static/uploads/perfiles/"
-
         if foto_perfil and foto_perfil.lower() != "none":
             img_url = f"{base_url}{foto_perfil}"
         else:
             img_url = f"{base_url}defecto.png"  # imagen por defecto
 
-        print(f"RUTA IMAGEN {img_url}")
-
-
-
-        # Contenido principal
+        # Margenes dinámicos
         es_nombre_largo = len(nombre) > 20
         lineas_descripcion = 1 if es_nombre_largo else 2
-
-        # margen dinámico para el botón
-        if lineas_descripcion == 2:
-            margen_boton = ft.margin.only(top=-5)  # 🔹 más abajo cuando son 2 líneas
-        else:
-            margen_boton = ft.margin.only(top=-15)  # 🔹 más arriba cuando es 1 línea
-
-        # margen dinámico según la condición
-        if es_nombre_largo and mostrar_boton:
-            margen_descripcion = ft.margin.only(top=-10)  # más pegado
-        else:
-            margen_descripcion = ft.margin.only(top=-3)  # normal
+        margen_boton = ft.margin.only(top=-5) if lineas_descripcion == 2 else ft.margin.only(top=-15)
+        margen_descripcion = ft.margin.only(top=-10) if es_nombre_largo and mostrar_boton else ft.margin.only(top=-3)
 
         tarjeta_contenido = ft.Container(
-            padding=ft.padding.only(top=10),
+            padding=ft.padding.only(top=8),
             content=ft.Column(
                 [
-                    ft.CircleAvatar(foreground_image_src=img_url, width=60, height=60, bgcolor=ft.Colors.GREY_300),
-
-
+                    ft.CircleAvatar(
+                        foreground_image_src=img_url,
+                        width=60,
+                        height=60,
+                        bgcolor=ft.Colors.GREY_300
+                    ),
                     ft.Text(f"COP {costo}/h", size=11, color=TEXT_COLOR, text_align=ft.TextAlign.CENTER),
-                    ft.Container(height=8),
-                    ft.Text(nombre, weight=ft.FontWeight.BOLD, size=17, color=TEXT_COLOR,
-                            text_align=ft.TextAlign.CENTER),
+                    ft.Container(height=3),
+                    ft.Container(
+                        content=ft.Text(
+                            nombre,
+                            weight=ft.FontWeight.BOLD,
+                            size=17,
+                            color=TEXT_COLOR,
+                            text_align=ft.TextAlign.CENTER,
+                            max_lines=1,
+                            overflow=ft.TextOverflow.ELLIPSIS
+                        ),
+                        height=28,
+                    ),
                     stars,
-                    ft.Text(categoria, size=14, weight=ft.FontWeight.W_500, color=TEXT_COLOR,
-                            text_align=ft.TextAlign.CENTER),
+                    ft.Container(
+                        content=ft.Text(
+                            categoria,
+                            size=14,
+                            weight=ft.FontWeight.W_500,
+                            color=TEXT_COLOR,
+                            text_align=ft.TextAlign.CENTER,
+                            max_lines=2,
+                            overflow=ft.TextOverflow.ELLIPSIS
+                        ),
+                        height=40,
+                    ),
                     ft.Text("Descripción:", size=12, color=ft.Colors.BLACK54, text_align=ft.TextAlign.CENTER),
-
                     ft.Container(
                         content=ft.Text(
                             descripcion,
                             size=11,
-                            max_lines=lineas_descripcion,
+                            max_lines=1,
                             overflow=ft.TextOverflow.ELLIPSIS,
                             color=TEXT_COLOR,
                             text_align=ft.TextAlign.CENTER
                         ),
-                        height=32,
-                        alignment=ft.alignment.center,
-                        margin=margen_descripcion
+                        height=18,
+                        alignment=ft.alignment.center
                     ),
-
-                    # Botón Ver más con cursor y on_click
+                    # Botón Ver más
                     ft.Container(
                         content=ft.TextButton(
                             "Ver más" if mostrar_boton else "",
-                            on_click=(lambda e: abrir_modal_detalle(foto_perfil, nombre, categoria, descripcion, costo,
-                                                                    calificacion)) if mostrar_boton else None,
+                            on_click=(lambda e: abrir_modal_detalle(
+                                foto_perfil, nombre, categoria, descripcion, costo, calificacion
+                            )) if mostrar_boton else None,
                             style=ft.ButtonStyle(
                                 color=PRIMARY_COLOR if mostrar_boton else "transparent",
                                 padding=0,
@@ -523,17 +548,38 @@ def pantalla_inicio(page: ft.Page, cambiar_pantalla):
                         ),
                         margin=margen_boton
                     )
-
                 ],
-                alignment=ft.MainAxisAlignment.CENTER,
+                alignment=ft.MainAxisAlignment.START,
                 horizontal_alignment=ft.CrossAxisAlignment.CENTER,
                 spacing=3
             )
         )
 
+        # Botón Contactar experto fijo abajo
+        boton_contactar = ft.Container(
+            content=ft.OutlinedButton(
+                text="Contactar experto",
+                style=ft.ButtonStyle(
+                    side={ft.ControlState.DEFAULT: ft.BorderSide(1, "#3EAEB1")},
+                    bgcolor={ft.ControlState.HOVERED: "#3EAEB1"},
+                    color={ft.ControlState.DEFAULT: "black", ft.ControlState.HOVERED: "white"},
+                    shape=ft.RoundedRectangleBorder(radius=20),
+                    padding=ft.padding.symmetric(horizontal=15, vertical=8),
+                    text_style=ft.TextStyle(size=13, weight=ft.FontWeight.W_600, font_family="Oswald"),
+                ),
+                # 🔹 Verifica sesión antes de actuar
+                on_click=lambda e: mostrar_modal_acceso(page, cambiar_pantalla)
+                if not token
+                else print(f"Contactando a {nombre}")
+            ),
+            bottom=8,
+            left=10,
+            right=10,
+        )
+
         return ft.Container(
             width=179,
-            height=270,
+            height=310,
             padding=8,
             bgcolor="white",
             border_radius=14,
@@ -541,11 +587,15 @@ def pantalla_inicio(page: ft.Page, cambiar_pantalla):
             content=ft.Stack(
                 controls=[
                     tarjeta_contenido,
-                    ft.Container(  # 👈 ahora sí lo posicionamos aquí
+                    ft.Container(
                         content=menu,
-                        top=5,
-                        right=5,
+                        width=40,
+                        height=40,
+                        top=0,
+                        right=0,
+                        bgcolor="transparent"
                     ),
+                    boton_contactar
                 ]
             )
         )
