@@ -216,7 +216,7 @@ def pantalla_configuracion(page: ft.Page, cambiar_pantalla=None):
         def guardar_contraseña(e):
             token = obtener_token(page)
             if not token:
-                mostrar_snackbar("Debes iniciar sesión o registrarte", exito=False)
+                mostrar_snackbar(page, "Debes iniciar sesión o registrarte", exito=False)
                 return
 
             contraseña = actual_field.value.strip() if actual_field.value else None
@@ -224,12 +224,11 @@ def pantalla_configuracion(page: ft.Page, cambiar_pantalla=None):
             repetir = repetir_field.value.strip() if repetir_field.value else None
 
             if not contraseña or not nueva or not repetir:
-                mostrar_snackbar("Debes ingresar todos los campos", exito=False)
+                mostrar_snackbar(page, "Debes ingresar todos los campos", exito=False)
                 return
 
             if nueva != repetir:
-                mostrar_snackbar("Las contraseñas no coinciden", exito=False)
-                return
+                mostrar_snackbar(page, "Las contraseñas no coinciden", exito=False)
 
             datos = {
                 "actual_contrasena": contraseña,
@@ -240,9 +239,9 @@ def pantalla_configuracion(page: ft.Page, cambiar_pantalla=None):
             respuesta = cambiar_contraseña_usuario(token, datos)
 
             if respuesta.get("error"):
-                mostrar_snackbar(respuesta["error"], exito=False)
+                mostrar_snackbar(page, respuesta["error"], exito=False)
             elif respuesta.get("message"):
-                mostrar_snackbar(respuesta["message"], exito=True)
+                mostrar_snackbar(page, respuesta["message"], exito=True)
                 Inicio.pantalla_inicio(page, cambiar_pantalla)
 
         # --- UI ---
@@ -266,10 +265,10 @@ def pantalla_configuracion(page: ft.Page, cambiar_pantalla=None):
                                 actual_field,
                                 ft.Text("Nueva contraseña", size=16, weight=ft.FontWeight.BOLD, color="#000000"),
                                 nueva_field,
-                                reglas_columna,  # 👈 validación debajo de nueva
+                                reglas_columna,  #validación debajo de nueva
                                 ft.Text("Repetir contraseña", size=16, weight=ft.FontWeight.BOLD, color="#000000"),
                                 repetir_field,
-                                confirm_row,  # 👈 validación debajo de repetir
+                                confirm_row,  # validación debajo de repetir
                                 ft.Row(
                                     spacing=10,
                                     alignment=ft.MainAxisAlignment.CENTER,
@@ -336,9 +335,8 @@ def pantalla_configuracion(page: ft.Page, cambiar_pantalla=None):
             respuesta = deshabilitar_cuenta_usu(token, datos)
 
             if respuesta.get("error") or respuesta.get("success") is False:
-                mostrar_snackbar("Contraseña incorrecta", exito=False)
+                mostrar_snackbar(page, "Error al eliminar la cuenta", exito=False)
                 return
-
             # 🔹 Si es correcta -> guardar y abrir modal
             page.validar_contraseña_eliminar = contraseña
             mostrar_modal_eliminar_cuenta(page, token, cambiar_pantalla)

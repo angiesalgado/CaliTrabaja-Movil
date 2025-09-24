@@ -7,6 +7,23 @@ from app.API_services.traer_guardados import traer_guardados
 from app.API_services.guardar_reporte import enviar_reporte
 
 
+def mostrar_snackbar(page: ft.Page, mensaje: str, exito=True):
+    """Muestra SnackBar con estilo uniforme"""
+    sb = ft.SnackBar(
+        content=ft.Text(
+            mensaje,
+            color="white",
+            size=16,
+            weight=ft.FontWeight.BOLD
+        ),
+        bgcolor=ft.Colors.GREEN if exito else ft.Colors.RED,
+        duration=3000,
+    )
+    page.overlay.append(sb)
+    sb.open = True
+    page.update()
+
+
 def menu_opciones(
     page,
     modal_reporte,
@@ -47,18 +64,29 @@ def menu_opciones(
         def toggle_guardado(e):
             nonlocal ya_guardada
 
-            if ya_guardada:
-                eliminar_guardado_usuario(token, datos)
-                icono.name = Icons.BOOKMARK_BORDER
-                texto.value = "Guardar"
-                ya_guardada = False
-            else:
-                guardar_publicacion(token, datos)
-                icono.name = Icons.DELETE
-                texto.value = "Eliminar"
-                ya_guardada = True
+            try:
+                if ya_guardada:
+                    resultado = eliminar_guardado_usuario(token, datos)
+                    if resultado.get("success", False):
+                        icono.name = Icons.BOOKMARK_BORDER
+                        texto.value = "Guardar"
+                        ya_guardada = False
+                        mostrar_snackbar(page, "Publicación eliminada de guardados", exito=True)
+                    else:
+                        mostrar_snackbar(page, "Error al eliminar de guardados", exito=False)
+                else:
+                    resultado = guardar_publicacion(token, datos)
+                    if resultado.get("success", False):
+                        icono.name = Icons.DELETE
+                        texto.value = "Eliminar"
+                        ya_guardada = True
+                        mostrar_snackbar(page, "Publicación guardada exitosamente", exito=True)
+                    else:
+                        mostrar_snackbar(page, "Error al guardar publicación", exito=False)
 
-            page.update()  # ✅ actualizamos pero no cerramos menú
+                page.update()  # ✅ actualizamos pero no cerramos menú
+            except Exception as ex:
+                mostrar_snackbar(page, f"Error: {str(ex)}", exito=False)
 
         # 👇 Usamos GestureDetector en vez de on_click directo en PopupMenuItem
         items.append(
@@ -73,17 +101,25 @@ def menu_opciones(
 
     # --- Opción Reportar ---
     if incluir_reporte:
+        def manejar_reporte(e):
+            try:
+                # Aquí puedes agregar lógica adicional si es necesario
+                modal_reporte.show(page)
+                mostrar_snackbar(page, "Formulario de reporte abierto", exito=True)
+            except Exception as ex:
+                mostrar_snackbar(page, f"Error al abrir reporte: {str(ex)}", exito=False)
+
         items.append(
             ft.PopupMenuItem(
                 content=ft.Row(
                     [
-                        ft.Icon(Icons.ERROR_OUTLINE, size=16,  color="#3EAEB1",),
+                        ft.Icon(Icons.ERROR_OUTLINE, size=16, color="#3EAEB1",),
                         ft.Text("Reportar", color=text_color),
                     ],
                     spacing=8,
                     alignment="start",
                 ),
-                on_click=lambda e: modal_reporte.show(page),
+                on_click=manejar_reporte,
             )
         )
 

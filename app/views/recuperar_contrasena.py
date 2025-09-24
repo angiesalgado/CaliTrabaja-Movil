@@ -1,8 +1,26 @@
 # recuperar_contrasena_view.py
 import flet as ft
 from app.components.nav import nav_bar
-
 from app.API_services.enviar_correo_recu import enviar_correo_usu
+
+
+# ---------- FUNCIÓN GLOBAL PARA MOSTRAR SNACKBAR ----------
+def mostrar_snackbar(page: ft.Page, mensaje: str, exito=True):
+    """Muestra SnackBar con estilo uniforme"""
+    sb = ft.SnackBar(
+        content=ft.Text(
+            mensaje,
+            color="white",
+            size=16,
+            weight=ft.FontWeight.BOLD
+        ),
+        bgcolor=ft.Colors.GREEN if exito else ft.Colors.RED,
+        duration=3000,
+    )
+    page.overlay.append(sb)
+    sb.open = True
+    page.update()
+
 
 def recuperar_contrasena(page: ft.Page, cambiar_pantalla):
     page.title = "Recuperar contraseña"
@@ -18,22 +36,39 @@ def recuperar_contrasena(page: ft.Page, cambiar_pantalla):
     )
 
     def enviar_link(e):
-        correo = email_field.value.strip()
-        if not correo:  # Validar que no esté vacío
-            page.snack_bar = ft.SnackBar(
-                content=ft.Text("Por favor ingresa un correo válido."),
-                bgcolor="red"
-            )
-        # Aquí iría la lógica para enviar enlace de recuperación
-        else:
-            page.snack_bar = ft.SnackBar(
-                content=ft.Text("Se ha enviado un enlace de recuperación al correo ingresado."),
-                bgcolor="#3EAEB1"
-            )
+        correo = email_field.value.strip() if email_field.value else ""
+
+        # Validar que no esté vacío
+        if not correo:
+            mostrar_snackbar(page, "Por favor ingresa un correo válido", exito=False)
+            return
+
+        # Validar formato básico de email
+        import re
+        email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        if not re.match(email_pattern, correo):
+            mostrar_snackbar(page, "El formato del correo no es válido", exito=False)
+            return
+
+        try:
+            # Llamar al servicio para enviar el correo
             data = {'correo': correo}
-            enviar_correo_usu(data)
-        page.snack_bar.open = True
-        page.update()
+            respuesta = enviar_correo_usu(data)
+
+            # Verificar respuesta del servicio
+            if respuesta and respuesta.get("success"):
+                mostrar_snackbar(page, "Se ha enviado un enlace de recuperación a tu correo", exito=True)
+                # Opcional: limpiar el campo después del envío exitoso
+                email_field.value = ""
+                email_field.update()
+            elif respuesta and respuesta.get("error"):
+                mostrar_snackbar(page, respuesta["error"], exito=False)
+            else:
+                mostrar_snackbar(page, "Error al enviar el correo. Intenta nuevamente", exito=False)
+
+        except Exception as ex:
+            print(f"Error al enviar correo de recuperación: {ex}")
+            mostrar_snackbar(page, "Error de conexión. Verifica tu internet e intenta nuevamente", exito=False)
 
     def build_content(page_width):
         container_width = min(page_width * 0.95, max_content_width)
