@@ -205,16 +205,18 @@ def publicaciones(page: ft.Page, cambiar_pantalla, origen=None):
             spacing=5
         )
     )
+
+    # ⚡ Panel de filtros lateral
     filtros_panel = ft.Container(
         bgcolor="white",
         width=250,
-        height=page.height,
+        height=page.height,  # ahora sí ocupa todo
         right=page.width,
         top=0,
-        padding=0,
         animate_position=300,
         content=ft.Column(
             [
+                # Header fijo arriba
                 ft.Container(
                     bgcolor="#F8F8F8",
                     padding=ft.padding.symmetric(horizontal=15, vertical=10),
@@ -236,8 +238,10 @@ def publicaciones(page: ft.Page, cambiar_pantalla, origen=None):
                         alignment=ft.MainAxisAlignment.START,
                     ),
                 ),
+
+                # Contenido con scroll
                 ft.Container(
-                    expand=True,
+                    expand=True,  # 🔹 ocupa todo el espacio intermedio
                     padding=ft.padding.all(15),
                     content=ft.Column(
                         [
@@ -251,9 +255,11 @@ def publicaciones(page: ft.Page, cambiar_pantalla, origen=None):
                             fechas
                         ],
                         spacing=12,
-                        scroll=ft.ScrollMode.AUTO
+                        scroll=ft.ScrollMode.AUTO  # ✅ solo esta parte hace scroll
                     )
                 ),
+
+                # Footer fijo con botones
                 ft.Container(
                     content=ft.Row(
                         [
@@ -289,19 +295,31 @@ def publicaciones(page: ft.Page, cambiar_pantalla, origen=None):
                         alignment=ft.MainAxisAlignment.CENTER,
                         spacing=20
                     ),
-                    padding=ft.padding.only(bottom=10)
-                )
+                    padding=ft.padding.all(10),
+                    bgcolor="white",
+                    height=60  # 🔹 altura fija para que siempre quede visible
+                ),
             ],
-            spacing=12,
+            spacing=0,
+            expand=True
         )
     )
 
     def abrir_filtros(e=None):
-        filtros_panel.right = page.width - 250
+        nonlocal saved_bottom
+        # Guardamos y ocultamos el bottom appbar para que el panel se sobreponga
+        saved_bottom = page.bottom_appbar
+        page.bottom_appbar = None
+
+        filtros_panel.right = page.width - 250  # mueve el panel a la vista
         overlay.visible = True
         page.update()
 
     def cerrar_filtros(e=None):
+        nonlocal saved_bottom
+        # Restauramos el bottom appbar
+        page.bottom_appbar = saved_bottom
+
         filtros_panel.right = page.width
         overlay.visible = False
         page.update()
@@ -527,19 +545,13 @@ def publicaciones(page: ft.Page, cambiar_pantalla, origen=None):
                 show_explora=True,
                 on_back_click=back_action
             ),
-            ft.Stack(
+            ft.Column(
                 [
-                    ft.Column(
-                        [
-                            header_resultados,
-                            grid_column  # 👈 paginación eliminada
-                        ],
-                        spacing=10,
-                        horizontal_alignment=ft.CrossAxisAlignment.CENTER
-                    ),
-                    overlay,
-                    filtros_panel
-                ]
+                    header_resultados,
+                    grid_column
+                ],
+                spacing=10,
+                horizontal_alignment=ft.CrossAxisAlignment.CENTER
             )
         ],
         spacing=10,
@@ -575,6 +587,11 @@ def publicaciones(page: ft.Page, cambiar_pantalla, origen=None):
         bgcolor=ft.Colors.WHITE,
         elevation=0,
     )
+
+    page.overlay.append(overlay)
+    page.overlay.append(filtros_panel)
+
+    saved_bottom = None
 
     page.add(layout)
     page.update()
