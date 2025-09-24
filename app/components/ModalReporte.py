@@ -35,7 +35,7 @@ class ModalReporte:
 
 
         self.dialog = ft.AlertDialog(
-            modal=True,
+            modal=False,
             bgcolor="#FFFFFF",
             content=ft.Container(
                 width=380,
@@ -87,6 +87,7 @@ class ModalReporte:
                 )
             ),
             actions_alignment=ft.MainAxisAlignment.END,
+            on_dismiss=lambda e: self.cancelar(e)
         )
 
     def guardar(self, e):

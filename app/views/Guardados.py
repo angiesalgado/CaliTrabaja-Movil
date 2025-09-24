@@ -109,20 +109,73 @@ def render_guardados(page: ft.Page, cambiar_pantalla=None):
         cards.controls.clear()
 
         nuevos_guardados = obtener_guardados()
-        for g in nuevos_guardados:
-            cards.controls.append(
-                saved_card(
-                    g.get("foto_perfil", "none"),
-                    g.get("publicacion_id"),
-                    g.get("usuario_id"),
-                    g.get("nombre_experto", "Sin nombre"),
-                    g.get("categoria", "Sin categoría"),
-                    g.get("subcategoria", "Sin subcategoría"),
-                    f"COP {g.get('costo')}" if g.get("costo") else "Precio no disponible",
-                    g.get("descripcion", "Sin descripción"),
 
+        if not nuevos_guardados:  # ✅ No hay guardados
+            cards.controls.append(
+                ft.Container(
+                    content=ft.Column(
+                        [
+                            ft.Icon(
+                                ft.Icons.BOOKMARK_BORDER,
+                                size=80,
+                                color="#3EAEB1"
+                            ),
+                            ft.Text(
+                                "Aún no tienes publicaciones guardadas",
+                                size=18,
+                                weight=ft.FontWeight.BOLD,
+                                color="#666666",
+                                text_align="center",
+                                font_family="Oswald"
+                            ),
+                            ft.Text(
+                                "Explora las publicaciones y guarda tus favoritas",
+                                size=14,
+                                color="#999999",
+                                text_align="center",
+                                font_family="Oswald"
+                            ),
+                            ft.ElevatedButton(
+                                "Ver publicaciones",
+                                bgcolor="#3EAEB1",
+                                color="white",
+                                width=200,
+                                style=ft.ButtonStyle(
+                                    shape=ft.RoundedRectangleBorder(radius=20),
+                                    text_style={"": ft.TextStyle(
+                                        font_family="Oswald",
+                                        size=14,
+                                        weight=ft.FontWeight.W_600,
+                                        color="white"
+                                    )}
+                                ),
+                                on_click=lambda e: cambiar_pantalla("publicaciones") if cambiar_pantalla else None
+                            )
+                        ],
+                        alignment=ft.MainAxisAlignment.CENTER,
+                        horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                        spacing=15
+                    ),
+                    expand=True,
+                    alignment=ft.alignment.center,
+                    padding=40,
                 )
             )
+        else:  # ✅ Sí hay guardados
+            for g in nuevos_guardados:
+                cards.controls.append(
+                    saved_card(
+                        g.get("foto_perfil", "none"),
+                        g.get("publicacion_id"),
+                        g.get("usuario_id"),
+                        g.get("nombre_experto", "Sin nombre"),
+                        g.get("categoria", "Sin categoría"),
+                        g.get("subcategoria", "Sin subcategoría"),
+                        f"COP {g.get('costo')}" if g.get("costo") else "Precio no disponible",
+                        g.get("descripcion", "Sin descripción"),
+                    )
+                )
+
         page.update()
 
     def mostrar_snackbar(page, mensaje, exito=True):
