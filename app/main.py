@@ -50,7 +50,7 @@ def main(page: ft.Page):
             pantalla_inicio(page, cambiar_pantalla)
         elif destino == "menu":
             pantalla_menu(page, cambiar_pantalla)
-        elif destino == "mensajes":  # ahora redirige a la mensajería
+        elif destino == "mensajes":  # 👈 ahora redirige a la mensajería
             if token is None:  # 🔹 sin sesión → mostrar modal
                 mostrar_modal_acceso(page, cambiar_pantalla)
                 return
@@ -102,6 +102,6 @@ def main(page: ft.Page):
 
 
 if __name__ == "__main__":
-    ft.app(target=main, view=ft.AppView.WEB_BROWSER, port=8550, host="0.0.0.0" )
+    ft.app(target=main, view=ft.AppView.WEB_BROWSER)
 
 
