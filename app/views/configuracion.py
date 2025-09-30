@@ -5,6 +5,8 @@ from app.API_services.datos_usuario import obtener_datos
 from app.API_services.cambiar_contraseña import cambiar_contraseña_usuario
 from app.API_services.cerrar_sesion import cerrar_sesion_api
 from app.API_services.deshabilitar_cuenta import deshabilitar_cuenta_usu
+from app.API_services.validar_contrasena import validar_contrasena_usuario
+
 
 
 
@@ -319,24 +321,25 @@ def pantalla_configuracion(page: ft.Page, cambiar_pantalla=None):
 
         confirmar_field.on_change = limpiar_error  # 👉 se asocia aquí
 
-        def deshabilitar_cuenta(e):
+        def validar_y_abrir_modal(e):
             token = obtener_token(page)
             if not token:
-                mostrar_snackbar("Debes iniciar sesión o registrarte", exito=False)
+                mostrar_snackbar(page, "Debes iniciar sesión o registrarte", exito=False)
                 return
 
             contraseña = confirmar_field.value.strip() if confirmar_field.value else None
             if not contraseña:
-                mostrar_snackbar("Debes ingresar la contraseña", exito=False)
+                mostrar_snackbar(page, "Debes ingresar la contraseña", exito=False)
                 return
 
             # 🔹 Validar contraseña con backend
             datos = {"contrasena": contraseña}
-            respuesta = deshabilitar_cuenta_usu(token, datos)
+            respuesta = validar_contrasena_usuario(token, datos)
 
-            if respuesta.get("error") or respuesta.get("success") is False:
-                mostrar_snackbar(page, "Error al eliminar la cuenta", exito=False)
+            if not respuesta.get("success"):
+                mostrar_snackbar(page, respuesta.get("message", "Contraseña incorrecta"), exito=False)
                 return
+
             # 🔹 Si es correcta -> guardar y abrir modal
             page.validar_contraseña_eliminar = contraseña
             mostrar_modal_eliminar_cuenta(page, token, cambiar_pantalla)
@@ -377,7 +380,7 @@ def pantalla_configuracion(page: ft.Page, cambiar_pantalla=None):
                                             color="white",
                                             width=170,
                                             style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=20)),
-                                            on_click=deshabilitar_cuenta
+                                            on_click=validar_y_abrir_modal
                                         ),
                                         ft.ElevatedButton(
                                             "Cancelar",
