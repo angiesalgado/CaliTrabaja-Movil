@@ -61,7 +61,8 @@ def menu_opciones(
             color=text_color,
         )
 
-        def toggle_guardado(e):
+        def toggle_guardado(*args):
+
             nonlocal ya_guardada
 
             try:
@@ -99,13 +100,34 @@ def menu_opciones(
             )
         )
 
-    # --- Opción Reportar ---
+        # --- Opción Reportar ---
     if incluir_reporte:
-        def manejar_reporte(e):
+        def manejar_reporte(*args):
             try:
-                # Aquí puedes agregar lógica adicional si es necesario
+                token = obtener_token(page)
+
+                def guardar_reporte(descripcion):
+                    datos = {
+                        "descripcion": descripcion,
+                        "reportado_id": usuario_id
+                    }
+                    if not token:
+                        mostrar_snackbar(page, "Inicia sesión para enviar reportes.", exito=False)
+                        return
+
+                    respuesta = enviar_reporte(token, datos)
+
+                    if respuesta.get("success"):
+                        mostrar_snackbar(page, "Reporte enviado correctamente.", exito=True)
+                    else:
+                        mostrar_snackbar(page, respuesta.get("message", "Error al enviar reporte."), exito=False)
+
+                # 🔹 Enlazar la función antes de abrir el modal
+                modal_reporte.on_guardar = guardar_reporte
+
+                # 🔹 Mostrar el modal
                 modal_reporte.show(page)
-                mostrar_snackbar(page, "Formulario de reporte abierto", exito=True)
+
             except Exception as ex:
                 mostrar_snackbar(page, f"Error al abrir reporte: {str(ex)}", exito=False)
 
@@ -113,7 +135,7 @@ def menu_opciones(
             ft.PopupMenuItem(
                 content=ft.Row(
                     [
-                        ft.Icon(Icons.ERROR_OUTLINE, size=16, color="#3EAEB1",),
+                        ft.Icon(Icons.ERROR_OUTLINE, size=16, color="#3EAEB1"),
                         ft.Text("Reportar", color=text_color),
                     ],
                     spacing=8,
@@ -122,6 +144,7 @@ def menu_opciones(
                 on_click=manejar_reporte,
             )
         )
+
 
     # --- Si no hay sesión → icono abre modal acceso ---
     if token is None and on_click_opcion is not None:
