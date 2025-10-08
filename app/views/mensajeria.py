@@ -1,8 +1,9 @@
 import flet as ft
 from datetime import datetime, timedelta
 from app.components.ModalReporte import ModalReporte
-from app.components.menu_inferior import menu_inferior   # ✅ import del menú
-
+from app.components.menu_inferior import menu_inferior  # ✅ import del menú
+from app.socket_cliente import sio
+import requests
 
 # -------------------
 # NAV SUPERIOR DE CHATS (gris)
@@ -47,23 +48,19 @@ def nav_chats(page: ft.Page, volver_callback=None):
 # -------------------
 # Función para formatear hora / fecha estilo WhatsApp
 # -------------------
-def formatear_fecha_hora(fecha: datetime):
-    hoy = datetime.now().date()
-    if fecha.date() == hoy:
-        return fecha.strftime("%H:%M")
-    elif fecha.date() == hoy - timedelta(days=1):
-        return "Ayer"
-    elif fecha.year == hoy.year:
-        return fecha.strftime("%d %b")
-    else:
-        return fecha.strftime("%d/%m/%y")
-
+def formatear_fecha_hora(fecha_str):
+    if not fecha_str:
+        return ""
+    try:
+        fecha = datetime.fromisoformat(fecha_str)
+    except Exception:
+        return fecha_str
+    return fecha.strftime("%d/%m/%Y %H:%M")
 
 # -------------------
 # Pantalla: Lista de chats
 # -------------------
 def lista_chats(page: ft.Page, cambiar_pantalla=None):
-
     modal_reporte = ModalReporte(
         on_guardar=lambda desc: print(f"Reporte guardado: {desc}"),
         on_cancelar=lambda: print("Reporte cancelado")
@@ -71,11 +68,11 @@ def lista_chats(page: ft.Page, cambiar_pantalla=None):
     if modal_reporte.dialog not in page.overlay:
         page.overlay.append(modal_reporte.dialog)
 
-    def abrir_chat(e):
+    def abrir_chat(e, otro_usuario_id):
         contacto = e.control.data
         page.session.set("contacto", contacto)
         if callable(cambiar_pantalla):
-            cambiar_pantalla("chat")
+            cambiar_pantalla("chat", receptor_id=otro_usuario_id)
 
     def reportar(e):
         contacto = e.control.data
@@ -83,112 +80,72 @@ def lista_chats(page: ft.Page, cambiar_pantalla=None):
         modal_reporte.dialog.open = True
         page.update()
 
-    def eliminar(e):
-        contacto = e.control.data
-        print(f"Eliminar chat con: {contacto['nombre']}")
+    # 🔥 Aquí pedimos los chats reales al backend
+    token = getattr(page, "session_token", None)
+    headers = {"Authorization": f"Bearer {token}"} if token else {}
+    resp = requests.get("http://127.0.0.1:5000/api/chats", headers=headers)
+    print("TEXT:", resp.text)
 
-    # Ejemplo de datos
-    chats = [
-        {
-            "nombre": "Juan Pérez",
-            "ultimo": "Nos vemos mañana",
-            "foto": "https://cdn-icons-png.flaticon.com/512/149/149071.png",
-            "hora": datetime.now() - timedelta(minutes=10),
-        },
-        {
-            "nombre": "María López",
-            "ultimo": "Gracias por la info!",
-            "foto": "https://cdn-icons-png.flaticon.com/512/194/194938.png",
-            "hora": datetime.now() - timedelta(days=1),
-        },
-        {
-            "nombre": "Carlos Ruiz",
-            "ultimo": "Te mando el archivo",
-            "foto": "https://cdn-icons-png.flaticon.com/512/236/236831.png",
-            "hora": datetime.now() - timedelta(days=3),
-        },
-    ]
+    data = resp.json()
+
+    chats = data.get("chats", [])  # <- tu backend debe devolver [{"usuario_id":..,"nombre":..,"ultimo":..,"foto":..,"hora":..}, ...]
 
     items = []
     for c in chats:
+        receptor_id = c["usuario_id"]
+        nombre = c.get("nombre", "")
+        ultimo = c.get("ultimo_texto", "")
+        hora = formatear_fecha_hora(c.get("hora"))
+
+        img_src = c.get("foto") or "https://via.placeholder.com/150"
+
         items.append(
-            ft.Container(
-                padding=10,
-                content=ft.Row(
-                    alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
-                    vertical_alignment=ft.CrossAxisAlignment.CENTER,
-                    controls=[
-                        ft.Row(
-                            spacing=10,
-                            controls=[
-                                ft.CircleAvatar(foreground_image_src=c["foto"]),
-                                ft.Column(
-                                    spacing=2,
-                                    alignment=ft.MainAxisAlignment.START,
-                                    controls=[
-                                        ft.Text(c["nombre"], weight="bold", color="black", no_wrap=True),
-                                        ft.Text(c["ultimo"], size=12, color=ft.Colors.GREY, no_wrap=True),
-                                    ]
-                                )
-                            ]
-                        ),
-                        ft.Row(
-                            spacing=6,
-                            vertical_alignment=ft.CrossAxisAlignment.CENTER,
-                            controls=[
-                                ft.Text(formatear_fecha_hora(c["hora"]), size=11, color=ft.Colors.GREY),
-                                ft.PopupMenuButton(
-                                    icon=ft.Icons.MORE_HORIZ,
-                                    items=[
-                                        ft.PopupMenuItem(
-                                            content=ft.Row(
-                                                controls=[
-                                                    ft.Icon(ft.Icons.ERROR_OUTLINE, color="#3EAEB1", size=18),
-                                                    ft.Text("Reportar", color="black"),
-                                                ]
-                                            ),
-                                            data=c,
-                                            on_click=reportar
-                                        ),
-                                        ft.PopupMenuItem(
-                                            content=ft.Row(
-                                                controls=[
-                                                    ft.Icon(ft.Icons.DELETE_OUTLINE, color="#3EAEB1", size=18),
-                                                    ft.Text("Eliminar", color="black"),
-                                                ]
-                                            ),
-                                            on_click=lambda e: mostrar_modal_eliminar_mensaje(page, mensaje_id="123"),
-                                        ),
-                                    ]
-                                ),
-                            ]
-                        )
-                    ]
-                ),
-                on_click=abrir_chat,
-                data=c,
+            ft.GestureDetector(
+                on_tap=lambda e, receptor_id=receptor_id: cambiar_pantalla("chat", receptor_id=receptor_id),
+                content=ft.Container(
+                    padding=10,
+                    content=ft.Row(
+                        alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                        vertical_alignment=ft.CrossAxisAlignment.CENTER,
+                        controls=[
+                            ft.Row(
+                                spacing=10,
+                                controls=[
+                                    ft.CircleAvatar(foreground_image_src=img_src),
+                                    ft.Column(
+                                        spacing=2,
+                                        alignment=ft.MainAxisAlignment.START,
+                                        controls=[
+                                            ft.Text(nombre, weight="bold", color=ft.Colors.BLACK, no_wrap=True),
+                                            ft.Text(ultimo, size=12, color=ft.Colors.GREY, no_wrap=True),
+                                        ]
+                                    )
+                                ]
+                            ),
+                            ft.Text(hora, size=11, color=ft.Colors.GREY),
+                        ]
+                    )
+                )
             )
         )
 
     # callback menú inferior
     def on_bottom_nav_click(index):
-        if index == 0:  # Inicio
+        if index == 0:
             cambiar_pantalla("inicio")
-        elif index == 1:  # Categorias
+        elif index == 1:
             cambiar_pantalla("categorias")
-        elif index == 2:  # Mensajes
+        elif index == 2:
             cambiar_pantalla("mensajes")
-        elif index == 3:  # Guardados
+        elif index == 3:
             cambiar_pantalla("guardados")
-        elif index == 4:  # Menú
+        elif index == 4:
             cambiar_pantalla("menu")
 
-    # callback del botón volver
     def volver_a_inicio_event(e):
         if callable(cambiar_pantalla):
             cambiar_pantalla("inicio")
 
-    # layout principal
     layout = ft.Column(
         controls=[
             nav_chats(page, volver_callback=volver_a_inicio_event),
@@ -197,7 +154,6 @@ def lista_chats(page: ft.Page, cambiar_pantalla=None):
         expand=True
     )
 
-    # menú inferior fijo
     page.bottom_appbar = ft.BottomAppBar(
         content=menu_inferior(2, on_bottom_nav_click),
         bgcolor=ft.Colors.WHITE,
@@ -208,157 +164,167 @@ def lista_chats(page: ft.Page, cambiar_pantalla=None):
 
 
 # -------------------
-# Pantalla: Chat individual
+# Pantalla: Chat individual (con Socket.IO)
 # -------------------
-def chat_view(page: ft.Page, cambiar_pantalla=None):
-    contacto = page.session.get("contacto") or {"nombre": "Contacto", "foto": None}
-    mensajes = ft.Column(expand=True, spacing=10, scroll="auto")
+def chat_view(page: ft.Page, cambiar_pantalla, receptor_id: int):
+    mensajes_lista = []
 
-    def enviar_mensaje(e):
-        if caja_mensaje.value and caja_mensaje.value.strip() != "":
-            texto = caja_mensaje.value.strip()
-            hora_envio = datetime.now().strftime("%I:%M %p").lstrip("0").replace("AM", "a. m.").replace("PM", "p. m.")
-
-            try:
-                max_bubble_width = int(page.width * 0.65)
-            except Exception:
-                max_bubble_width = 320
-            if max_bubble_width < 220:
-                max_bubble_width = 220
-
-            bubble = ft.Row(
-                [
-                    ft.Container(
-                        content=ft.Column(
-                            controls=[
-                                ft.Text(
-                                    texto,
-                                    color="White",
-                                    size=14,
-                                    no_wrap=False,
-                                    max_lines=None,
-                                    width=max_bubble_width,
-                                ),
-                                ft.Text(
-                                    hora_envio,
-                                    size=10,
-                                    color="White",
-                                ),
-                            ],
-                            spacing=6,
-                            horizontal_alignment=ft.CrossAxisAlignment.END
-                        ),
-                        bgcolor="#3EAEB1",
-                        padding=ft.padding.symmetric(horizontal=12, vertical=8),
-                        border_radius=15,
-                        width=max_bubble_width + 30
-                    )
-                ],
-                alignment="end"
-            )
-
-            mensajes.controls.append(bubble)
-            caja_mensaje.value = ""
-            caja_mensaje.update()
-            mensajes.update()
-
-            try:
-                mensajes.controls[-1].scroll_into_view()
-            except Exception:
-                pass
-
-    # función para volver
-    def volver(e):
-        page.bottom_appbar = None
-        if callable(cambiar_pantalla):
-            cambiar_pantalla("mensajes")
-        page.update()
-
-    # Header
-    header = ft.SafeArea(
-        top=False,
-        left=False,
-        right=False,
-        bottom=False,
-        content=ft.Container(
-            content=ft.Row(
-                controls=[
-                    ft.IconButton(
-                        icon=ft.Icons.CHEVRON_LEFT,
-                        icon_size=40,
-                        icon_color="#3EAEB1",
-                        on_click=volver
-                    ),
-                    ft.CircleAvatar(foreground_image_src=contacto.get("foto")),
-                    ft.Text(
-                        contacto.get("nombre"),
-                        size=18,
-                        weight="bold",
-                        color="#3EAEB1"
-                    ),
-                ],
-                spacing=10,
-                vertical_alignment=ft.CrossAxisAlignment.CENTER,
-            ),
-            bgcolor="#F5F5F5",
-            padding=ft.padding.only(left=5, right=10),
-        )
+    mensajes_column = ft.ListView(
+        expand=True,
+        spacing=10,
+        padding=10,
+        auto_scroll=True
     )
-
-    caja_mensaje = ft.TextField(
+    mensajes_lista = []
+    input_field = ft.TextField(
         hint_text="Escribe un mensaje...",
         expand=True,
-        border_radius=30,
-        content_padding=10,
-        color="black",
-        multiline=True,
-        min_lines=1,
-        max_lines=3,
-        focused_border_color="#3EAEB1"
+        border=ft.InputBorder.OUTLINE,
     )
 
-    boton_enviar = ft.IconButton(
-        icon=ft.Icons.SEND,
-        bgcolor="#3EAEB1",
-        icon_color="white",
-        on_click=enviar_mensaje
-    )
+    user_id = page.session.get("user_id")
 
-    bottom_content = ft.SafeArea(
-        bottom=True,
-        content=ft.Container(
-            content=ft.Row(
-                controls=[caja_mensaje, boton_enviar],
-                spacing=8,
-                vertical_alignment=ft.CrossAxisAlignment.CENTER
-            ),
-            bgcolor="white",
-            padding=ft.padding.symmetric(horizontal=12, vertical=10),
-            width=float("inf"),
+    if not sio.connected:
+        sio.connect("http://127.0.0.1:5000")
+        sio.emit("identify", {"user_id": user_id})
+        sio.emit("join_chat", {"user_id": user_id, "other_user_id": receptor_id})
+
+    def volver(e):
+        if sio.connected:
+            sio.emit("leave_chat", {
+                "user_id": user_id,
+                "other_user_id": receptor_id
+            })
+            sio.disconnect()  # <-- muy importante para permitir volver a conectar luego
+        if callable(cambiar_pantalla):
+            cambiar_pantalla("mensajes")
+
+    def agregar_burbuja(texto, emisor, mensajes, fecha, leido=False):
+        es_mio = emisor == user_id
+
+        burbuja = ft.Row(
+            controls=[
+                ft.Container(
+                    content=ft.Text(texto, size=14),
+                    padding=10,
+                    bgcolor=ft.Colors.BLUE_100 if es_mio else ft.Colors.GREY_200,
+                    border_radius=10,
+                    margin=10,
+                    width=300
+                )
+            ],
+            alignment=ft.MainAxisAlignment.END if es_mio else ft.MainAxisAlignment.START
         )
-    )
 
-    page.bottom_appbar = ft.BottomAppBar(
-        content=bottom_content,
+        mensajes_lista.append(burbuja)
+
+    def recibir_historial(data):
+        print("✅ Handler 'chat_history' activado")
+        print("📦 Historial recibido:", data)
+
+        mensajes_lista.clear()
+
+        for m in data:
+            agregar_burbuja(
+                texto=m.get("texto"),
+                emisor=m.get("emisor"),
+                mensajes=mensajes_column,
+                fecha=m.get("fecha"),
+                leido=m.get("leido", False)
+            )
+
+        mensajes_column.controls = mensajes_lista
+        print("📊 Cantidad de burbujas generadas:", len(mensajes_lista))
+        page.update()
+
+        sio.emit("leer_mensajes", {
+            "user_id": user_id,
+            "other_user_id": receptor_id
+        })
+        page.update()
+        sio.emit("leer_mensajes", {
+            "user_id": user_id,
+            "other_user_id": receptor_id
+        })
+
+    # Registrar si no existe aún
+    if not sio.handlers.get("chat_history"):
+        print("🧠 Registrando handler 'chat_history'")
+        sio.on("chat_history", recibir_historial)
+
+        # Marcar mensajes como leídos en el servidor
+        if receptor_id:
+            sio.emit("leer_mensajes", {
+                "user_id": user_id,
+                "other_user_id": receptor_id
+            })
+
+    def recibir_mensaje(data):
+        ...
+
+    if not sio.handlers.get("new_message"):
+        sio.on("new_message", recibir_mensaje)
+
+    def mensaje_visto(data):
+        ...
+
+    if not sio.handlers.get("mensaje_leido"):
+        sio.on("mensaje_leido", mensaje_visto)
+
+    def enviar_mensaje(e):
+        texto = input_field.value.strip()
+        if not texto:
+            return
+        sio.emit("send_message", {
+            "user_id": user_id,
+            "other_user_id": receptor_id,
+            "texto": texto
+        })
+        input_field.value = ""
+        input_field.update()
+
+    enviar_btn = ft.IconButton(icon=ft.Icons.SEND, on_click=enviar_mensaje)
+
+    header = ft.Container(
+        content=ft.Row(
+            alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+            controls=[
+                ft.IconButton(icon=ft.Icons.ARROW_BACK, on_click=volver, icon_color="#3EAEB1"),
+                ft.Text("Chat", size=18, weight="bold"),
+                ft.Container(width=40)
+            ]
+        ),
+        padding=ft.padding.symmetric(horizontal=10, vertical=5),
         bgcolor="white",
-        elevation=6
+        height=50
     )
 
-    mensajes_container = ft.Container(
-        content=mensajes,
-        expand=True,
-        padding=ft.padding.only(top=10, left=10, right=10, bottom=10)
-    )
+    mensajes_lista.append(ft.Text("Mensaje de prueba"))
+    mensajes_column.controls = mensajes_lista
 
     return ft.Column(
         controls=[
-            header,
-            mensajes_container
+            header,  # 🔝 Barra superior fija
+
+            ft.Container(  # 🧭 Área scrollable
+                expand=True,
+                content=mensajes_column
+            ),
+
+            ft.Divider(),  # Línea separadora
+
+            ft.Row(  # 🔽 Barra inferior fija
+                controls=[input_field, enviar_btn],
+                alignment=ft.MainAxisAlignment.END
+            )
         ],
         expand=True
     )
 
 
+# -------------------
+# Modal eliminar mensaje
+# -------------------
 def mostrar_modal_eliminar_mensaje(page, mensaje_id=None):
     def confirmar_eliminar(e):
         print(f"Mensaje {mensaje_id} eliminado (simulación frontend).")
@@ -374,18 +340,14 @@ def mostrar_modal_eliminar_mensaje(page, mensaje_id=None):
         bgcolor="#3EAEB1",
         color=ft.Colors.WHITE,
         width=110,
-        style=ft.ButtonStyle(
-            shape=ft.RoundedRectangleBorder(radius=20)
-        ),
+        style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=20)),
         on_click=confirmar_eliminar,
     )
 
     btn_cancelar = ft.OutlinedButton(
         "Cancelar",
         width=110,
-        style=ft.ButtonStyle(
-            shape=ft.RoundedRectangleBorder(radius=20)
-        ),
+        style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=20)),
         on_click=cancelar,
     )
 
@@ -398,14 +360,12 @@ def mostrar_modal_eliminar_mensaje(page, mensaje_id=None):
             border_radius=20,
             content=ft.Column(
                 [
-                    ft.Text(
-                        "¿Deseas eliminar este mensaje?",
-                        size=20,
-                        weight=ft.FontWeight.BOLD,
-                        text_align="center",
-                        color="#666666",
-                        font_family="Oswald"
-                    ),
+                    ft.Text("¿Deseas eliminar este mensaje?",
+                            size=20,
+                            weight=ft.FontWeight.BOLD,
+                            text_align="center",
+                            color="#666666",
+                            font_family="Oswald"),
                     ft.Row(
                         [btn_aceptar, btn_cancelar],
                         alignment=ft.MainAxisAlignment.CENTER,
@@ -425,3 +385,31 @@ def mostrar_modal_eliminar_mensaje(page, mensaje_id=None):
 
     modal.open = True
     page.update()
+
+    # -------------------
+    # Helper para burbujas de chat
+    # -------------------
+
+
+def agregar_burbuja(texto, es_mio, mensajes, page):
+    hora_envio = datetime.now().strftime("%H:%M")
+    bubble = ft.Row(
+        [
+            ft.Container(
+                content=ft.Column([
+                    ft.Text(texto, color="white", size=14),
+                    ft.Text(hora_envio, size=10, color="white"),
+                ]),
+                bgcolor="#3EAEB1" if es_mio else "#999999",
+                padding=10,
+                border_radius=15,
+            )
+        ],
+        alignment="end" if es_mio else "start"
+    )
+    mensajes.controls.append(bubble)
+    mensajes.update()
+    try:
+        mensajes.controls[-1].scroll_into_view()
+    except:
+        pass

@@ -1,9 +1,11 @@
-# login_view.py
+# views/inicio_sesion.py
 import flet as ft
 import re
-from . import  Inicio
+import requests
+from . import Inicio
 from app.components.nav import nav_bar
 from app.API_services.iniciar_sesion import iniciar_sesion_api
+from app.API_services.inicio import inicio_api   # 🔥 importa tu función que llama a /api/inicio
 
 
 def inicio_sesion(page: ft.Page, cambiar_pantalla):
@@ -65,22 +67,31 @@ def inicio_sesion(page: ft.Page, cambiar_pantalla):
             mostrar_snackbar("El correo electrónico no es válido.", exito=False)
             return
 
-        # Llamada a la API
+        # Llamada a la API de login
         resultado = iniciar_sesion_api(email, password)
 
         if not resultado.get("success"):
             mensaje_error = resultado.get("message", "Error desconocido.")
             mostrar_snackbar(mensaje_error, exito=False)
         else:
-            # Guardar token y mostrar éxito
-            page.session_token = resultado.get("token")
+            # Guardar token
+            token = resultado.get("token")
+            page.session_token = token
+
+            # 🔥 Llamar a /api/inicio para obtener datos del usuario
+            datos = inicio_api(token)
+            if datos.get("success"):
+                page.session.set("user_id", datos.get("id_usuario_logueado"))
+                page.session.set("rol_usuario", datos.get("rol_usuario"))
+                page.session.set("primer_nombre", datos.get("primer_nombre"))
+
+                print(f"✅ Sesión iniciada con user_id={page.session.get('user_id')}")
+
             mostrar_snackbar("Inicio de sesión exitoso.", exito=True)
 
             # Cargar vista principal
             page.clean()
             Inicio.pantalla_inicio(page, cambiar_pantalla)
-
-    page.update()
 
     def volver_atras(e):
         page.dialog = ft.AlertDialog(
@@ -180,9 +191,9 @@ def inicio_sesion(page: ft.Page, cambiar_pantalla):
                                     on_click=iniciar_sesion
                                 )
                             ),
-                            # --- Links debajo (uno debajo del otro) ---
+                            # --- Links debajo ---
                             ft.Column(
-                                spacing=5,  # 👈 cerca pero no pegados
+                                spacing=5,
                                 alignment=ft.MainAxisAlignment.CENTER,
                                 horizontal_alignment=ft.CrossAxisAlignment.CENTER,
                                 controls=[

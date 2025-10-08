@@ -613,8 +613,8 @@ def pantalla_inicio(page: ft.Page, cambiar_pantalla):
         }
 
     valores = obtener_datos_inicio(page)
-    recientes=valores.get("recientes" or [])
-    aleatorias=valores.get("aleatorias" or [])
+    recientes=valores.get("recientes") or []
+    aleatorias=valores.get("aleatorias") or []
     # ---------------- PUBLICACIONES ----------------
 
     publicaciones_container = ft.Column(
