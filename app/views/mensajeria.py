@@ -4,6 +4,7 @@ from app.components.ModalReporte import ModalReporte
 from app.components.menu_inferior import menu_inferior  # ✅ import del menú
 from app.socket_cliente import sio
 import requests
+import time
 
 # -------------------
 # NAV SUPERIOR DE CHATS (gris)
@@ -60,7 +61,7 @@ def formatear_fecha_hora(fecha_str):
 # -------------------
 # Pantalla: Lista de chats
 # -------------------
-def lista_chats(page: ft.Page, cambiar_pantalla=None):
+def lista_chats(page: ft.Page, cambiar_pantalla, sio, user_id_global):
     modal_reporte = ModalReporte(
         on_guardar=lambda desc: print(f"Reporte guardado: {desc}"),
         on_cancelar=lambda: print("Reporte cancelado")
@@ -166,8 +167,11 @@ def lista_chats(page: ft.Page, cambiar_pantalla=None):
 # -------------------
 # Pantalla: Chat individual (con Socket.IO)
 # -------------------
-def chat_view(page: ft.Page, cambiar_pantalla, receptor_id: int):
-    mensajes_lista = []
+mensajes_map = {}
+
+
+def chat_view(page: ft.Page, cambiar_pantalla, sio, user_id_global, receptor_id, receptor_nombre):
+    # --- 1. DEFINICIÓN DE CONTROLES Y VARIABLES ---
 
     mensajes_column = ft.ListView(
         expand=True,
@@ -176,114 +180,342 @@ def chat_view(page: ft.Page, cambiar_pantalla, receptor_id: int):
         auto_scroll=True
     )
     mensajes_lista = []
+    mensajes_map = {}  # Almacena {mensaje_id: ft.Icon} para actualización
+
     input_field = ft.TextField(
         hint_text="Escribe un mensaje...",
         expand=True,
         border=ft.InputBorder.OUTLINE,
     )
 
-    user_id = page.session.get("user_id")
+    #user_id = page.session.get("user_id")
+    user_id = user_id_global
+    try:
+        user_id = int(user_id_global)
+    except (ValueError, TypeError):
+        # Si falla, usamos la versión original, aunque es riesgoso
+        user_id = user_id_global
 
-    if not sio.connected:
-        sio.connect("http://127.0.0.1:5000")
+    # --- 2. CONEXIÓN INICIAL Y UNIÓN AL CHAT ---
+    if sio.connected:
+        # Re-identificamos y nos unimos a la sala (Esto es necesario al re-entrar)
         sio.emit("identify", {"user_id": user_id})
         sio.emit("join_chat", {"user_id": user_id, "other_user_id": receptor_id})
 
+    # ----------------------------------------------------------------------
+    # --- 3. FUNCIONES AUXILIARES (Definidas primero para evitar NameError) ---
+    # ----------------------------------------------------------------------
+
     def volver(e):
+        # 1. Quitar handlers (ESENCIAL para la re-entrada)
+        if sio.handlers.get("chat_history"): sio.off("chat_history")
+        if sio.handlers.get("new_message"): sio.off("new_message")
+        if sio.handlers.get("message_read"): sio.off("message_read")
+
+        # 2. Salir de la sala (NO DESCONECTAR EL SOCKET GLOBAL)
         if sio.connected:
             sio.emit("leave_chat", {
                 "user_id": user_id,
                 "other_user_id": receptor_id
             })
-            sio.disconnect()  # <-- muy importante para permitir volver a conectar luego
+
+        # 3. Limpiar variables y controles
+        mensajes_column.controls.clear()
+        mensajes_lista.clear()
+        mensajes_map.clear()
+
+        # 4. Cambiar de pantalla
         if callable(cambiar_pantalla):
             cambiar_pantalla("mensajes")
 
-    def agregar_burbuja(texto, emisor, mensajes, fecha, leido=False):
-        es_mio = emisor == user_id
+    def EstadoMensaje(leido: bool):
+        icon_name = ft.Icons.DONE_ALL if leido else ft.Icons.ACCESS_TIME
+        icon_color = ft.Colors.LIGHT_BLUE_500 if leido else ft.Colors.GREY_500
+        return ft.Icon(name=icon_name, color=icon_color, size=16)
 
-        burbuja = ft.Row(
+    def agregar_burbuja(texto, emisor, mensajes, fecha, usuario_logueado_id, leido=False, mensaje_id=None):
+
+        # 1. CONVERSIÓN DE TIPO SEGURA
+        es_mio = False
+        try:
+            # Forzamos que ambas IDs sean números enteros para una comparación precisa
+            emisor_id_int = int(emisor) if emisor is not None else -1
+            usuario_id_int = int(usuario_logueado_id) if usuario_logueado_id is not None else -2
+
+            es_mio = emisor_id_int == usuario_id_int
+            print(f"DEBUG BUBBLE: Emisor={emisor_id_int} | Logueado={usuario_id_int} | Texto='{texto[:15]}...' | Resultado={es_mio}")
+        except (ValueError, TypeError):
+            # Si alguna ID no puede convertirse (ej: 'None' o un texto), es_mio será False.
+            es_mio = False
+            print(f"DEBUG BUBBLE: Error de conversión. Texto='{texto[:15]}...'")
+            # 2. Creamos el control de estado de lectura (solo si el mensaje es nuestro)
+        estado_icon = None
+        if es_mio:
+            estado_icon = EstadoMensaje(leido)
+
+        # 3. El contenido de la burbuja (ft.Column)
+        burbuja_content = ft.Column(
             controls=[
-                ft.Container(
-                    content=ft.Text(texto, size=14),
-                    padding=10,
-                    bgcolor=ft.Colors.BLUE_100 if es_mio else ft.Colors.GREY_200,
-                    border_radius=10,
-                    margin=10,
-                    width=300
+                ft.Text(texto, size=14, color=ft.Colors.BLACK),
+                ft.Row(
+                    controls=[
+                        ft.Text(fecha, size=10, color=ft.Colors.BLACK54),
+                        estado_icon if es_mio else ft.Container(width=0)
+                    ],
+                    alignment=ft.MainAxisAlignment.END,
+                    spacing=5
                 )
             ],
+            horizontal_alignment=ft.CrossAxisAlignment.START,
+            spacing=2
+        )
+
+        # 4. Contenedor principal de la burbuja
+        burbuja_container = ft.Container(
+            content=burbuja_content,
+            padding=10,
+            # ⬅️ Usa es_mio para el color
+            bgcolor=ft.Colors.BLUE_100 if es_mio else ft.Colors.GREY_200,
+            border_radius=10,
+            margin=ft.margin.only(bottom=5),
+            width=300
+        )
+
+        # 5. Envolvemos en un Row para alinear toda la burbuja
+        burbuja = ft.Row(
+            controls=[burbuja_container],
+            # ⬅️ Usa es_mio para la alineación
             alignment=ft.MainAxisAlignment.END if es_mio else ft.MainAxisAlignment.START
         )
 
+        # 6. Si es nuestro mensaje y tiene ID, lo guardamos
+        if es_mio and mensaje_id:
+            mensajes_map[mensaje_id] = estado_icon
+
         mensajes_lista.append(burbuja)
 
+    # -----------------------------------------------------------------------------------
+    # --- 4. HANDLERS DE SOCKETIO (DEBEN ESTAR AQUÍ, ANTES DEL SIO.ON) ---
+    # -----------------------------------------------------------------------------------
+
     def recibir_historial(data):
-        print("✅ Handler 'chat_history' activado")
-        print("📦 Historial recibido:", data)
+        print("3. 📜 [HISTORIAL] Recibiendo el historial de mensajes.")
 
+        historial_recibido = data
+        if not isinstance(historial_recibido, list):
+            print("❌ Error: Los datos de historial no son una lista de mensajes.", historial_recibido)
+            return
+
+        # --- LÓGICA DE PROCESAMIENTO (Fuera del hilo de UI) ---
         mensajes_lista.clear()
+        mensajes_map.clear()
 
-        for m in data:
+        for m in historial_recibido:
+            id_val = m.get("mensaje_id")
+            if id_val is not None:
+                try:
+                    id_val = int(id_val)
+                except (ValueError, TypeError):
+                    id_val = None
+
             agregar_burbuja(
                 texto=m.get("texto"),
                 emisor=m.get("emisor"),
                 mensajes=mensajes_column,
                 fecha=m.get("fecha"),
-                leido=m.get("leido", False)
+                usuario_logueado_id=user_id,
+                leido=m.get("leido", False),
+                mensaje_id=id_val
             )
 
-        mensajes_column.controls = mensajes_lista
-        print("📊 Cantidad de burbujas generadas:", len(mensajes_lista))
-        page.update()
+        # 🚨 CRÍTICO: Función de Actualización en el Thread Principal 🚨
+        def actualizar_ui():
+            mensajes_column.controls.clear()
+            mensajes_column.controls = mensajes_lista
+            page.update()
 
-        sio.emit("leer_mensajes", {
-            "user_id": user_id,
-            "other_user_id": receptor_id
-        })
-        page.update()
-        sio.emit("leer_mensajes", {
-            "user_id": user_id,
-            "other_user_id": receptor_id
-        })
-
-    # Registrar si no existe aún
-    if not sio.handlers.get("chat_history"):
-        print("🧠 Registrando handler 'chat_history'")
-        sio.on("chat_history", recibir_historial)
-
-        # Marcar mensajes como leídos en el servidor
-        if receptor_id:
             sio.emit("leer_mensajes", {
                 "user_id": user_id,
                 "other_user_id": receptor_id
             })
 
-    def recibir_mensaje(data):
-        ...
-
-    if not sio.handlers.get("new_message"):
-        sio.on("new_message", recibir_mensaje)
+        # 💥 EJECUCIÓN ASÍNCRONA PARA FORZAR LA ACTUALIZACIÓN DE UI 💥
+        page.run_thread(actualizar_ui)
 
     def mensaje_visto(data):
-        ...
+        id_data = data.get('mensaje_id')
+        if not id_data: return
 
-    if not sio.handlers.get("mensaje_leido"):
-        sio.on("mensaje_leido", mensaje_visto)
+        if not isinstance(id_data, list):
+            id_list = [id_data]
+        else:
+            id_list = id_data
+
+        needs_update = False
+
+        for mensaje_id_raw in id_list:
+            try:
+                mensaje_id = int(mensaje_id_raw)
+            except (ValueError, TypeError):
+                continue
+
+            if mensaje_id in mensajes_map:
+                icon_control = mensajes_map[mensaje_id]
+
+                icon_control.name = ft.Icons.DONE_ALL
+                icon_control.color = ft.Colors.LIGHT_BLUE_500
+
+                needs_update = True
+
+        if needs_update:
+            # 🚨 FIX CRÍTICO DE CONDICIÓN DE CARRERA 🚨
+            def forzar_actualizacion_icono():
+                # Damos 200ms para que el hilo de creación del mensaje termine de mapear el icono.
+                time.sleep(0.2)
+                page.update()
+
+            page.run_thread(forzar_actualizacion_icono)
+
+    def recibir_mensaje(data):
+        id_val = data.get("mensaje_id")
+        if id_val is not None:
+            try:
+                id_val = int(id_val)
+            except (ValueError, TypeError):
+                id_val = None
+
+        # ¡IMPORTANTE! Asegúrate que user_id sea un entero si lo estás usando
+        try:
+            user_id_int = int(user_id)
+        except:
+            user_id_int = user_id  # Fallback
+
+        emisor_id = data.get("emisor")
+        try:
+            emisor_id_int = int(emisor_id)
+        except:
+            emisor_id_int = emisor_id  # Fallback
+
+        es_mio = emisor_id_int == user_id_int
+
+        if es_mio:
+            print("2. 🔄 [ECO] Recibiendo confirmación del mensaje enviado (Server -> Cliente).")
+        else:
+            print("2. 📥 [RECIBIDO] Mensaje del otro usuario.")
+
+        leido_status = data.get("leido", False)
+
+        # 1. Agregamos la burbuja (esto actualiza mensajes_lista, no la UI)
+        agregar_burbuja(
+            texto=data.get("texto"),
+            emisor=emisor_id,
+            mensajes=mensajes_column,
+            fecha=data.get("fecha"),
+            usuario_logueado_id=user_id,
+            leido=leido_status,
+            mensaje_id=id_val
+        )
+        # --- 🚨 CORRECCIÓN DE THREADING 🚨 ---
+        def actualizar_chat_en_tiempo_real():
+            # 2. Reasignar la lista de controles
+            mensajes_column.controls = mensajes_lista
+
+            # 3. Forzar la actualización
+            mensajes_column.update()
+            page.update()  # Forzamos una actualización de página por si acaso
+
+            # Opcional: Scroll al final
+            if mensajes_column.controls:
+                mensajes_column.scroll_to(offset=-1)
+                mensajes_column.update()
+
+            """if id_val and es_mio:
+                # Esperamos un momento para garantizar que Flet haya dibujado el icono
+                time.sleep(0.3)
+
+                try:
+                    # Verificamos si el mensaje ya tiene el estado de "leido" en la base de datos
+                    # Esto requiere una función que consulte el estado de la base de datos o API
+
+                    # O, alternativamente, asumimos que si el receptor está en el chat, el mensaje ya se leyó.
+
+                    # La solución MÁS SIMPLE y efectiva: Forzar la lógica de "visto"
+                    if id_val in mensajes_map:
+                        icon_control = mensajes_map[id_val]
+
+                        # Asumimos que si el receptor está activo, el visto debe ser inmediato
+                        icon_control.name = ft.Icons.DONE_ALL
+                        icon_control.color = ft.Colors.LIGHT_BLUE_500
+
+                        page.update()  # Forzamos el redibujo del icono
+
+                except Exception as e:
+                    print(f"Error al forzar el visto inmediato: {e}")"""
+        # 4. Ejecutar la actualización en el hilo principal de Flet
+        page.run_thread(actualizar_chat_en_tiempo_real)
+        # ------------------------------------
+
+        # ❌ ELIMINAMOS ESTAS LÍNEAS porque ahora están dentro de run_thread:
+        # mensajes_column.controls = mensajes_lista
+        # mensajes_column.update()
+
+        if not es_mio:
+            sio.emit("message_seen", {
+                "mensaje_id": data.get("mensaje_id"),
+                "user_id": user_id
+            })
 
     def enviar_mensaje(e):
         texto = input_field.value.strip()
-        if not texto:
-            return
+        if not texto: return
+
+        print("----------------------------------------------------------------")
+        print("1. 📤 [ENVIANDO] Mensaje (Cliente -> Server).")
+
+        if not sio.connected:
+            try:
+                print(f"⚠️ Intentando reconectar SocketIO con ID: {user_id}")
+                sio.connect("http://127.0.0.1:5000", auth={"user_id": user_id})
+            except Exception as ex:
+                print(f"❌ Fallo al reconectar SocketIO: {ex}")
+                return
+
         sio.emit("send_message", {
-            "user_id": user_id,
-            "other_user_id": receptor_id,
-            "texto": texto
+            "user_id": user_id, "other_user_id": receptor_id, "texto": texto
         })
+
         input_field.value = ""
         input_field.update()
 
     enviar_btn = ft.IconButton(icon=ft.Icons.SEND, on_click=enviar_mensaje)
+
+    # ----------------------------------------------------------------------
+    # --- 5. REGISTRO DE HANDLERS (Ahora todas las funciones ya existen) ---
+    # ----------------------------------------------------------------------
+
+    sio.on("chat_history", recibir_historial)
+    sio.on("new_message", recibir_mensaje)
+    sio.on("message_read", mensaje_visto)
+
+    # ----------------------------------------------------------------------
+    # --- 6. SOLICITUD DE HISTORIAL CON DELAY ---
+    # ----------------------------------------------------------------------
+
+    def solicitar_historial_con_delay():
+        time.sleep(0.1)
+
+        if receptor_id and sio.connected:
+            print("📜 [SOLICITANDO] Historial de mensajes tras un delay.")
+            sio.emit("get_history", {"user_id": user_id, "other_user_id": receptor_id})
+        elif not sio.connected:
+            print("⚠️ SocketIO no conectado al solicitar historial.")
+
+    # 🚨 CLAVE: Solo llamamos a la función asíncrona una vez.
+    page.run_thread(solicitar_historial_con_delay)
+
+    # ----------------------------------------------------------------------
+    # --- 7. ESTRUCTURA VISUAL Y RETORNO FINAL ---
+    # ----------------------------------------------------------------------
 
     header = ft.Container(
         content=ft.Row(
@@ -299,28 +531,28 @@ def chat_view(page: ft.Page, cambiar_pantalla, receptor_id: int):
         height=50
     )
 
-    mensajes_lista.append(ft.Text("Mensaje de prueba"))
-    mensajes_column.controls = mensajes_lista
+    input_bar = ft.Container(
+        content=ft.Row(
+            controls=[input_field, enviar_btn],
+            alignment=ft.MainAxisAlignment.START,
+            spacing=5
+        ),
+        padding=ft.padding.only(left=10, right=5, top=5, bottom=5)
+    )
 
     return ft.Column(
         controls=[
-            header,  # 🔝 Barra superior fija
-
-            ft.Container(  # 🧭 Área scrollable
-                expand=True,
-                content=mensajes_column
+            header,
+            # ✅ Layout con expansión correcta
+            ft.Container(
+                content=mensajes_column,
+                expand=True
             ),
-
-            ft.Divider(),  # Línea separadora
-
-            ft.Row(  # 🔽 Barra inferior fija
-                controls=[input_field, enviar_btn],
-                alignment=ft.MainAxisAlignment.END
-            )
+            ft.Divider(height=1),
+            input_bar
         ],
         expand=True
     )
-
 
 # -------------------
 # Modal eliminar mensaje

@@ -15,7 +15,7 @@ from app.API_services.datos_usuario import obtener_datos
 from app.components.ModalAcceso import mostrar_modal_acceso
 
 
-def pantalla_inicio(page: ft.Page, cambiar_pantalla):
+def pantalla_inicio(page: ft.Page, cambiar_pantalla, sio, user_id_global):
 
 
     # ---------------- CONFIGURACIÓN GENERAL ----------------
@@ -47,6 +47,46 @@ def pantalla_inicio(page: ft.Page, cambiar_pantalla):
 
     modal_detalle = ModalTarjetaCompleta()
     page.overlay.append(modal_detalle.dialog)
+
+    def contactar_experto_y_navegar(receptor_id, nombre_experto, categoria):
+
+        if not usuario_autenticado:
+            mostrar_modal_acceso(page, cambiar_pantalla)
+            return
+
+        if not sio.connected or user_id_global is None:
+            print("❌ ERROR: SocketIO no conectado o user_id desconocido.")
+            return
+
+            # 1. 🚨 COMPROBACIÓN Y RECONEXIÓN DE SOCKETIO
+            if user_id_global is None:
+                print("❌ ERROR: user_id_global es None. No se puede conectar.")
+                mostrar_modal_acceso(page, cambiar_pantalla)
+                return
+
+            if not sio.connected:
+                try:
+                    # Reintentar conectar con la URL de tu backend y el ID del usuario
+                    sio.connect("http://127.0.0.1:5000", auth={"user_id": user_id_global})
+                    print(f"✅ SocketIO reconectado con ID: {user_id_global}")
+                except Exception as e:
+                    print(f"❌ Fallo crítico al reconectar SocketIO: {e}")
+                    # Aquí podrías mostrar un error al usuario.
+                    return
+
+        mensaje_predeterminado = (
+            f"Hola, estoy interesado/a en tu servicio de {categoria}. "
+            "¿Podrías darme más detalles sobre la disponibilidad y tarifas?"
+        )
+
+        sio.emit("send_message", {
+            "user_id": user_id_global,
+            "other_user_id": receptor_id,
+            "texto": mensaje_predeterminado
+        })
+
+        # Navegar directamente al chat
+        cambiar_pantalla("chat", receptor_id=receptor_id, receptor_nombre=nombre_experto)
 
     def abrir_modal_detalle(foto_perfil, nombre, profesion, descripcion, costo, calificacion):
         print("CLICK -> abrir_modal_detalle:", nombre)  # <-- mira la consola donde corres Flet
@@ -570,7 +610,7 @@ def pantalla_inicio(page: ft.Page, cambiar_pantalla):
                 # 🔹 Verifica sesión antes de actuar
                 on_click=lambda e: mostrar_modal_acceso(page, cambiar_pantalla)
                 if not token
-                else print(f"Contactando a {nombre}")
+                else contactar_experto_y_navegar(usuario_id, nombre, categoria)
             ),
             bottom=8,
             left=10,
