@@ -53,7 +53,7 @@ class ModalReporte:
         )
 
         self.dialog = ft.AlertDialog(
-            modal=True,
+            modal=False,
             bgcolor="#FFFFFF",
             content=ft.Container(
                 width=380,
