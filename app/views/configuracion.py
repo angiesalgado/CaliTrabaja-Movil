@@ -424,7 +424,7 @@ def pantalla_configuracion(page: ft.Page, cambiar_pantalla=None):
                                     controls=[
                                         ft.Text("Nombre del usuario:", size=16,
                                                 weight=ft.FontWeight.BOLD, color="#000000"),
-                                        ft.Text(nombre, size=16, color="#000000")
+                                        ft.Text(nombre, size=16, color="#3eaeb1", weight=ft.FontWeight.BOLD)
                                     ],
                                     spacing=5
                                 ),
@@ -432,7 +432,7 @@ def pantalla_configuracion(page: ft.Page, cambiar_pantalla=None):
                                     controls=[
                                         ft.Text("Rol actual:", size=16,
                                                 weight=ft.FontWeight.BOLD, color="#000000"),
-                                        ft.Text(rol, size=16, color="#000000")
+                                        ft.Text(rol, size=16, color="#3eaeb1",  weight=ft.FontWeight.BOLD)
                                     ],
                                     spacing=5
                                 ),

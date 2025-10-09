@@ -33,7 +33,7 @@ class ModalReporte:
             border="none",
             filled=True,
             fill_color="#D9D9D9",
-            border_radius=10,
+            border_radius=15,
 
             # 🔹 Estilo del texto escrito
             text_style=ft.TextStyle(

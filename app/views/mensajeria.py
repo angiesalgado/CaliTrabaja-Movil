@@ -97,9 +97,45 @@ def lista_chats(page: ft.Page, cambiar_pantalla, sio, user_id_global):
         nombre = c.get("nombre", "")
         ultimo = c.get("ultimo_texto", "")
         hora = formatear_fecha_hora(c.get("hora"))
-
         img_src = c.get("foto") or "https://via.placeholder.com/150"
 
+        # 🔹 Popup menu (Calificar - Reportar - Eliminar)
+        popup_menu = ft.PopupMenuButton(
+            icon=ft.Icons.MORE_HORIZ,
+            items=[
+                ft.PopupMenuItem(
+                    content=ft.Row(
+                        controls=[
+                            ft.Icon(ft.Icons.STAR_RATE_OUTLINED, color="#3EAEB1", size=18),
+                            ft.Text("Calificar", color="black"),
+                        ]
+                    ),
+                    on_click=lambda e: mostrar_modal_calificar(page),
+                ),
+                ft.PopupMenuItem(
+                    content=ft.Row(
+                        controls=[
+                            ft.Icon(ft.Icons.ERROR_OUTLINE, color="#3EAEB1", size=18),
+                            ft.Text("Reportar", color="black"),
+                        ]
+                    ),
+                    data=c,
+                    on_click=reportar,
+                ),
+                ft.PopupMenuItem(
+                    content=ft.Row(
+                        controls=[
+                            ft.Icon(ft.Icons.DELETE_OUTLINE, color="#3EAEB1", size=18),
+                            ft.Text("Eliminar", color="black"),
+                        ]
+                    ),
+                    data=c,
+                    on_click=lambda e: mostrar_modal_eliminar_mensaje(page, mensaje_id=c.get("id", "123")),
+                ),
+            ],
+        )
+
+        # 🔹 Card del chat
         items.append(
             ft.GestureDetector(
                 on_tap=lambda e, receptor_id=receptor_id: cambiar_pantalla("chat", receptor_id=receptor_id),
@@ -120,13 +156,20 @@ def lista_chats(page: ft.Page, cambiar_pantalla, sio, user_id_global):
                                             ft.Text(nombre, weight="bold", color=ft.Colors.BLACK, no_wrap=True),
                                             ft.Text(ultimo, size=12, color=ft.Colors.GREY, no_wrap=True),
                                         ]
-                                    )
+                                    ),
                                 ]
                             ),
-                            ft.Text(hora, size=11, color=ft.Colors.GREY),
-                        ]
-                    )
-                )
+                            ft.Row(
+                                spacing=6,
+                                vertical_alignment=ft.CrossAxisAlignment.CENTER,
+                                controls=[
+                                    ft.Text(hora, size=11, color=ft.Colors.GREY),
+                                    popup_menu  # ⬅️ Menú añadido
+                                ],
+                            ),
+                        ],
+                    ),
+                ),
             )
         )
 
@@ -617,6 +660,155 @@ def mostrar_modal_eliminar_mensaje(page, mensaje_id=None):
 
     modal.open = True
     page.update()
+
+    # -------------------
+    # Modal Calificar
+    # -------------------
+def mostrar_modal_calificar(page):
+    calificacion = {"valor": 0}  # se guarda la selección
+
+    # --- Función para actualizar estrellas ---
+    def actualizar_estrellas(valor):
+        for i, estrella in enumerate(estrellas, start=1):
+            if i <= valor:
+                estrella.icon = ft.Icons.STAR
+                estrella.icon_color = "#3EAEB1"
+            else:
+                estrella.icon = ft.Icons.STAR_BORDER
+                estrella.icon_color = "#3EAEB1"
+        calificacion["valor"] = valor
+        page.update()
+
+    # --- Guardar calificación ---
+    def guardar_calificacion(e):
+        if calificacion["valor"] == 0:
+            page.snack_bar = ft.SnackBar(
+                ft.Text("Selecciona al menos una estrella para calificar."),
+                bgcolor="#FFB6C1"
+            )
+            page.snack_bar.open = True
+            page.update()
+            return
+
+        if not reseña.value or reseña.value.strip() == "":
+            page.snack_bar = ft.SnackBar(
+                ft.Text("Por favor, escribe una reseña."),
+                bgcolor="#FFB6C1"
+            )
+            page.snack_bar.open = True
+            page.update()
+            return
+
+        modal.open = False
+        page.snack_bar = ft.SnackBar(
+            ft.Text(f"Calificación enviada: {calificacion['valor']} estrellas"),
+            bgcolor="#3EAEB1"
+        )
+        page.snack_bar.open = True
+        page.update()
+
+    # --- Cancelar ---
+    def cancelar_calificacion(e):
+        modal.open = False
+        page.update()
+
+    # --- Crear estrellas ---
+    estrellas = []
+    for i in range(1, 6):
+        estrella = ft.IconButton(
+            icon=ft.Icons.STAR_BORDER,
+            icon_color="#3EAEB1",
+            icon_size=34,
+            on_click=lambda e, v=i: actualizar_estrellas(v)
+        )
+        estrellas.append(estrella)
+
+    # --- Campo de reseña ---
+    reseña = ft.TextField(
+        multiline=True,
+        min_lines=3,
+        max_lines=3,
+        hint_text="Escribe una reseña",
+        border="none",
+        filled=True,
+        fill_color="#D9D9D9",
+        border_radius=15,
+        text_style=ft.TextStyle(
+            font_family="Oswald",
+            size=14,
+            color=ft.Colors.BLACK
+        ),
+        hint_style=ft.TextStyle(
+            font_family="Oswald",
+            size=14,
+            weight=ft.FontWeight.W_500,
+            color="#808080",
+        ),
+    )
+
+    # --- Botones ---
+    btn_guardar = ft.ElevatedButton(
+        "Guardar",
+        bgcolor="#3EAEB1",
+        color=ft.Colors.WHITE,
+        width=110,
+        style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=20)),
+        on_click=guardar_calificacion,
+    )
+
+    btn_cancelar = ft.OutlinedButton(
+        "Cancelar",
+        width=110,
+        style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=20)),
+        on_click=cancelar_calificacion,
+    )
+
+    # --- Modal ---
+    modal = ft.AlertDialog(
+        modal=False,
+        bgcolor="#FFFFFF",
+        content=ft.Container(
+            width=380,   # 🔹 más angosto
+            height=260,  # 🔹 menos alto (más compacto)
+            bgcolor="#FFFFFF",
+            border_radius=20,
+            padding=ft.padding.only(top=15, bottom=15, left=20, right=20),  # 🔹 menos espacio interno
+            content=ft.Column(
+                [
+                    ft.Text(
+                        "Calificar usuario",
+                        size=24,
+                        weight="bold",
+                        text_align="center",
+                        color="#3EAEB1",
+                        font_family="Oswald"
+                    ),
+                    ft.Row(
+                        controls=estrellas,
+                        alignment=ft.MainAxisAlignment.CENTER,
+                        spacing=0  # 🔹 estrellas más juntas
+                    ),
+                    reseña,
+                    ft.Row(
+                        [btn_guardar, btn_cancelar],
+                        alignment=ft.MainAxisAlignment.CENTER,
+                        spacing=15
+                    )
+                ],
+                alignment=ft.MainAxisAlignment.CENTER,
+                spacing=14,  # 🔹 menos separación vertical
+                horizontal_alignment=ft.CrossAxisAlignment.CENTER
+            )
+        )
+    )
+
+    # --- Mostrar modal ---
+    if modal not in page.overlay:
+        page.overlay.append(modal)
+
+    modal.open = True
+    page.update()
+
 
     # -------------------
     # Helper para burbujas de chat
