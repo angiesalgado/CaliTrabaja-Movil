@@ -5,6 +5,8 @@ from app.components.menu_inferior import menu_inferior  # ✅ import del menú
 from app.socket_cliente import sio
 import requests
 import time
+from app.API_services.guardar_calificacion import enviar_calificacion
+from app.API_services.guardar_reporte import enviar_reporte
 
 # -------------------
 # NAV SUPERIOR DE CHATS (gris)
@@ -46,6 +48,7 @@ def nav_chats(page: ft.Page, volver_callback=None):
     )
 
 
+
 # -------------------
 # Función para formatear hora / fecha estilo WhatsApp
 # -------------------
@@ -77,9 +80,45 @@ def lista_chats(page: ft.Page, cambiar_pantalla, sio, user_id_global):
 
     def reportar(e):
         contacto = e.control.data
-        page.dialog = modal_reporte.dialog
-        modal_reporte.dialog.open = True
-        page.update()
+        reportado_id = contacto.get("usuario_id")
+
+        token = obtener_token(page)
+
+        def guardar_reporte(descripcion):
+            datos = {
+                "descripcion": descripcion,
+                "reportado_id": reportado_id
+            }
+
+            if not token:
+                page.snack_bar = ft.SnackBar(
+                    content=ft.Text("Inicia sesión para enviar un reporte."),
+                    bgcolor="red"
+                )
+                page.snack_bar.open = True
+                page.update()
+                return
+
+            respuesta = enviar_reporte(token, datos)
+
+            if respuesta.get("success"):
+                page.snack_bar = ft.SnackBar(
+                    content=ft.Text("✅ Reporte enviado correctamente."),
+                    bgcolor="#3EAEB1"
+                )
+            else:
+                page.snack_bar = ft.SnackBar(
+                    content=ft.Text(f"❌ {respuesta.get('message', 'Error al enviar reporte.')}"),
+                    bgcolor="red"
+                )
+            page.snack_bar.open = True
+            page.update()
+
+        # ✅ Conectamos la función al modal y lo abrimos
+        modal_reporte.on_guardar = guardar_reporte
+        modal_reporte.show(page)
+
+
 
     # 🔥 Aquí pedimos los chats reales al backend
     token = getattr(page, "session_token", None)
@@ -110,7 +149,7 @@ def lista_chats(page: ft.Page, cambiar_pantalla, sio, user_id_global):
                             ft.Text("Calificar", color="black"),
                         ]
                     ),
-                    on_click=lambda e: mostrar_modal_calificar(page),
+                    on_click=lambda e, rid=receptor_id: mostrar_modal_calificar(page, receptor_id=rid),
                 ),
                 ft.PopupMenuItem(
                     content=ft.Row(
@@ -597,6 +636,7 @@ def chat_view(page: ft.Page, cambiar_pantalla, sio, user_id_global, receptor_id,
         expand=True
     )
 
+
 # -------------------
 # Modal eliminar mensaje
 # -------------------
@@ -661,10 +701,16 @@ def mostrar_modal_eliminar_mensaje(page, mensaje_id=None):
     modal.open = True
     page.update()
 
-    # -------------------
+#OBTENER TOKEN DE SESSION
+def obtener_token(page):
+        return getattr(page, "session_token", None)
+
+# -------------------
     # Modal Calificar
     # -------------------
-def mostrar_modal_calificar(page):
+
+def mostrar_modal_calificar(page, receptor_id):
+    print("📨 ID del usuario a calificar:", receptor_id)
     calificacion = {"valor": 0}  # se guarda la selección
 
     # --- Función para actualizar estrellas ---
@@ -677,7 +723,9 @@ def mostrar_modal_calificar(page):
                 estrella.icon = ft.Icons.STAR_BORDER
                 estrella.icon_color = "#3EAEB1"
         calificacion["valor"] = valor
+
         page.update()
+
 
     # --- Guardar calificación ---
     def guardar_calificacion(e):
@@ -700,6 +748,21 @@ def mostrar_modal_calificar(page):
             return
 
         modal.open = False
+
+        token = obtener_token(page)
+
+
+
+        datos = {
+            "reseña": reseña.value,
+            "valor_calificacion": calificacion["valor"],
+            "calificado_id": receptor_id
+        }
+
+        enviar_calificacion(token, datos)
+
+
+
         page.snack_bar = ft.SnackBar(
             ft.Text(f"Calificación enviada: {calificacion['valor']} estrellas"),
             bgcolor="#3EAEB1"

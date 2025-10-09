@@ -15,7 +15,7 @@ from app.API_services.datos_usuario import obtener_datos
 from app.components.ModalAcceso import mostrar_modal_acceso
 
 
-def pantalla_inicio(page: ft.Page, cambiar_pantalla, sio, user_id_global):
+def pantalla_inicio(page: ft.Page, cambiar_pantalla, sio=None, user_id_global=None):
 
 
     # ---------------- CONFIGURACIÓN GENERAL ----------------
