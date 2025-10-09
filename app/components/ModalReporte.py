@@ -19,11 +19,10 @@ def mostrar_snackbar(page: ft.Page, mensaje: str, exito=True):
 
 
 class ModalReporte:
-    def __init__(self, on_guardar=None, on_cancelar=None, alto_texto=150, publicacion_id=None, usuario_id=None):
+    def __init__(self, on_guardar=None, on_cancelar=None):
         self.on_guardar = on_guardar
         self.on_cancelar = on_cancelar
-        self.publicacion_id = publicacion_id
-        self.usuario_id = usuario_id
+
 
         # 🔹 TextField dentro de un Container para fijar altura
         self.descripcion = ft.TextField(
@@ -115,7 +114,7 @@ class ModalReporte:
         try:
             # Si hay callback personalizado, lo ejecutamos
             if self.on_guardar:
-                resultado = self.on_guardar(self.descripcion.value, self.publicacion_id, self.usuario_id)
+                resultado = self.on_guardar(self.descripcion.value)
 
                 # Verificar si el resultado indica éxito
                 if isinstance(resultado, dict) and resultado.get("success", False):
