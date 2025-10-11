@@ -39,7 +39,7 @@ class ModalReporte:
             text_style=ft.TextStyle(
                 font_family="Oswald",
                 size=14,
-                color=ft.Colors.BLACK
+                color=ft.Colors.BLACK,
             ),
 
             # 🔹 Estilo del placeholder
@@ -103,7 +103,9 @@ class ModalReporte:
                 )
             ),
             actions_alignment=ft.MainAxisAlignment.END,
+            inset_padding=ft.padding.symmetric(horizontal=20, vertical=10),
         )
+
 
     def guardar(self, e):
         # Validar que haya descripción

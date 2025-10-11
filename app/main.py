@@ -106,7 +106,7 @@ def main(page: ft.Page):
 
         elif destino == "chat":
             if receptor_id is None:
-                print("❌ ERROR: receptor_id no fue pasado a cambiar_pantalla('chat')")
+                print(" ERROR: receptor_id no fue pasado a cambiar_pantalla('chat')")
                 return
             contenido = chat_view(page, cambiar_pantalla, sio, user_id_global, receptor_id, receptor_nombre)
             page.controls.append(contenido)
@@ -157,10 +157,10 @@ def main(page: ft.Page):
         elif path == "/chat":
             receptor_id = query_params.get("receptor_id", [None])[0]
             if receptor_id:
-                print("✅ receptor_id extraído:", receptor_id)
+                print(" receptor_id extraído:", receptor_id)
                 cambiar_pantalla("chat", receptor_id=int(receptor_id))
             else:
-                print("❌ receptor_id no encontrado en la URL")
+                print(" receptor_id no encontrado en la URL")
 
     page.on_route_change = route_change
 
@@ -181,4 +181,4 @@ def main(page: ft.Page):
 
 
 if __name__ == "__main__":
-    ft.app(target=main, view=ft.AppView.WEB_BROWSER)
+    ft.app(target=main, view=ft.AppView.WEB_BROWSER, host="0.0.0.0", port=8550)

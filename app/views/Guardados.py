@@ -211,6 +211,7 @@ def render_guardados(page: ft.Page, cambiar_pantalla=None):
             img_url = f"{base_url}defecto.png"  # imagen por defecto
 
         return ft.Container(
+
             content=ft.Column(
                 [
                     ft.Row(
@@ -254,12 +255,19 @@ def render_guardados(page: ft.Page, cambiar_pantalla=None):
                                         spacing=4,
                                     ),
                                     ft.Text(precio, size=13, weight="bold", color="#666666"),
-                                    ft.Text(
-                                        descripcion,
-                                        size=13,
-                                        color="black",
-                                        no_wrap=False,
-                                        weight="bold",
+                                    ft.Container(
+                                        width=600 if page.width > 800 else page.width * 0.9,
+                                        # limitar ancho en pantallas grandes
+                                        content=ft.Text(
+                                            descripcion,
+                                            size=13,
+                                            color="black",
+                                            no_wrap=False,  # permite salto de línea
+                                            max_lines=None,  # muestra todas las líneas necesarias
+                                            overflow=ft.TextOverflow.VISIBLE,  # evita el corte del texto
+                                            text_align=ft.TextAlign.JUSTIFY,  # justifica el texto
+                                            weight="bold",
+                                        ),
                                     ),
                                 ],
                                 spacing=3,
