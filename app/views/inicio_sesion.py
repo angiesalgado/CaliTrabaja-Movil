@@ -2,6 +2,7 @@
 import flet as ft
 import re
 import requests
+import time
 from . import Inicio
 from app.components.nav import nav_bar
 from app.API_services.iniciar_sesion import iniciar_sesion_api
@@ -97,6 +98,7 @@ def inicio_sesion(page: ft.Page, cambiar_pantalla, sio, user_id_global):
             mostrar_snackbar("Inicio de sesión exitoso.", exito=True)
 
             # Cargar vista principal
+            time.sleep(1)
             page.clean()
             cambiar_pantalla("inicio")
 

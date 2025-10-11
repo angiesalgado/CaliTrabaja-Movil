@@ -103,24 +103,24 @@ def lista_chats(page: ft.Page, cambiar_pantalla, sio, user_id_global):
 
             if respuesta.get("success"):
                 page.snack_bar = ft.SnackBar(
-                    content=ft.Text("✅ Reporte enviado correctamente."),
+                    content=ft.Text(" Reporte enviado correctamente."),
                     bgcolor="#3EAEB1"
                 )
             else:
                 page.snack_bar = ft.SnackBar(
-                    content=ft.Text(f"❌ {respuesta.get('message', 'Error al enviar reporte.')}"),
+                    content=ft.Text(f" {respuesta.get('message', 'Error al enviar reporte.')}"),
                     bgcolor="red"
                 )
             page.snack_bar.open = True
             page.update()
 
-        # ✅ Conectamos la función al modal y lo abrimos
+        # Conectamos la función al modal y lo abrimos
         modal_reporte.on_guardar = guardar_reporte
         modal_reporte.show(page)
 
 
 
-    # 🔥 Aquí pedimos los chats reales al backend
+    # Aquí pedimos los chats reales al backend
     token = getattr(page, "session_token", None)
     headers = {"Authorization": f"Bearer {token}"} if token else {}
     resp = requests.get("http://127.0.0.1:5000/api/chats", headers=headers)
@@ -635,16 +635,43 @@ def chat_view(page: ft.Page, cambiar_pantalla, sio, user_id_global, receptor_id,
         ],
         expand=True
     )
-
+def mostrar_snackbar(page, mensaje, exito=True):
+    """Muestra SnackBar con estilo uniforme"""
+    sb = ft.SnackBar(
+        content=ft.Text(
+            mensaje,
+            color="white",
+            size=16,
+            weight=ft.FontWeight.BOLD
+        ),
+        bgcolor=ft.Colors.GREEN if exito else ft.Colors.RED,
+        duration=3000,
+    )
+    page.overlay.append(sb)
+    sb.open = True
+    page.update()
 
 # -------------------
 # Modal eliminar mensaje
 # -------------------
-def mostrar_modal_eliminar_mensaje(page, mensaje_id=None):
+def mostrar_modal_eliminar_mensaje(page, mensaje_id=None, chat_container=None, on_eliminar_callback=None):
     def confirmar_eliminar(e):
-        print(f"Mensaje {mensaje_id} eliminado (simulación frontend).")
         modal.open = False
         page.update()
+
+        # 🔥 Llamar al callback si existe (para eliminar de la lista visual)
+        if on_eliminar_callback:
+            on_eliminar_callback()
+
+        # 🔥 Si hay un contenedor específico, eliminarlo
+        if chat_container and chat_container in page.controls:
+            page.controls.remove(chat_container)
+            page.update()
+
+        print(f"Mensaje {mensaje_id} eliminado (simulación frontend).")
+
+        # ✅ SnackBar de confirmación
+        mostrar_snackbar(page, "Conversación eliminada correctamente.", exito=True)
 
     def cancelar(e):
         modal.open = False
@@ -711,9 +738,8 @@ def obtener_token(page):
 
 def mostrar_modal_calificar(page, receptor_id):
     print("📨 ID del usuario a calificar:", receptor_id)
-    calificacion = {"valor": 0}  # se guarda la selección
+    calificacion = {"valor": 0}
 
-    # --- Función para actualizar estrellas ---
     def actualizar_estrellas(valor):
         for i, estrella in enumerate(estrellas, start=1):
             if i <= valor:
@@ -723,35 +749,25 @@ def mostrar_modal_calificar(page, receptor_id):
                 estrella.icon = ft.Icons.STAR_BORDER
                 estrella.icon_color = "#3EAEB1"
         calificacion["valor"] = valor
-
         page.update()
 
 
     # --- Guardar calificación ---
     def guardar_calificacion(e):
+        # Validación: seleccionar estrellas
         if calificacion["valor"] == 0:
-            page.snack_bar = ft.SnackBar(
-                ft.Text("Selecciona al menos una estrella para calificar."),
-                bgcolor="#FFB6C1"
-            )
-            page.snack_bar.open = True
-            page.update()
+            mostrar_snackbar(page, "Selecciona al menos una estrella para calificar.", exito=False)
             return
 
+        # Validación: escribir reseña
         if not reseña.value or reseña.value.strip() == "":
-            page.snack_bar = ft.SnackBar(
-                ft.Text("Por favor, escribe una reseña."),
-                bgcolor="#FFB6C1"
-            )
-            page.snack_bar.open = True
-            page.update()
+            mostrar_snackbar(page, "Por favor, escribe una reseña.", exito=False)
             return
 
         modal.open = False
+        page.update()
 
         token = obtener_token(page)
-
-
 
         datos = {
             "reseña": reseña.value,
@@ -759,17 +775,15 @@ def mostrar_modal_calificar(page, receptor_id):
             "calificado_id": receptor_id
         }
 
-        enviar_calificacion(token, datos)
+        # Enviar calificación
+        resultado = enviar_calificacion(token, datos)
 
-
-
-        page.snack_bar = ft.SnackBar(
-            ft.Text(f"Calificación enviada: {calificacion['valor']} estrellas"),
-            bgcolor="#3EAEB1"
-        )
-        page.snack_bar.open = True
-        page.update()
-
+        # ✅ SnackBar según resultado
+        if resultado and resultado.get("success"):
+            mostrar_snackbar(page, f"Calificación enviada: {calificacion['valor']} estrellas", exito=True)
+        else:
+            mensaje_error = resultado.get("message", "Error al enviar calificación.") if resultado else "Error de conexión."
+            mostrar_snackbar(page, mensaje_error, exito=False)
     # --- Cancelar ---
     def cancelar_calificacion(e):
         modal.open = False
@@ -809,7 +823,7 @@ def mostrar_modal_calificar(page, receptor_id):
         ),
     )
 
-    # --- Botones ---
+    # Botones
     btn_guardar = ft.ElevatedButton(
         "Guardar",
         bgcolor="#3EAEB1",
@@ -831,11 +845,11 @@ def mostrar_modal_calificar(page, receptor_id):
         modal=False,
         bgcolor="#FFFFFF",
         content=ft.Container(
-            width=380,   # 🔹 más angosto
-            height=260,  # 🔹 menos alto (más compacto)
+            width=380,
+            height=260,
             bgcolor="#FFFFFF",
             border_radius=20,
-            padding=ft.padding.only(top=15, bottom=15, left=20, right=20),  # 🔹 menos espacio interno
+            padding=ft.padding.only(top=15, bottom=15, left=20, right=20),
             content=ft.Column(
                 [
                     ft.Text(
@@ -849,7 +863,7 @@ def mostrar_modal_calificar(page, receptor_id):
                     ft.Row(
                         controls=estrellas,
                         alignment=ft.MainAxisAlignment.CENTER,
-                        spacing=0  # 🔹 estrellas más juntas
+                        spacing=0
                     ),
                     reseña,
                     ft.Row(
@@ -859,13 +873,12 @@ def mostrar_modal_calificar(page, receptor_id):
                     )
                 ],
                 alignment=ft.MainAxisAlignment.CENTER,
-                spacing=14,  # 🔹 menos separación vertical
+                spacing=14,
                 horizontal_alignment=ft.CrossAxisAlignment.CENTER
             )
         )
     )
 
-    # --- Mostrar modal ---
     if modal not in page.overlay:
         page.overlay.append(modal)
 
