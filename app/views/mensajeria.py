@@ -959,7 +959,7 @@ def agregar_burbuja(texto, es_mio, mensajes, page):
                     ft.Text(texto, color="white", size=14),
                     ft.Text(hora_envio, size=10, color="white"),
                 ]),
-                bgcolor="#3EAEB1" if es_mio else "#999999",
+                bgcolor="#3EAEB1" if es_mio else "#D9D9D9",
                 padding=10,
                 border_radius=15,
             )
