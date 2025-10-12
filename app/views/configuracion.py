@@ -280,7 +280,16 @@ def pantalla_configuracion(page: ft.Page, cambiar_pantalla=None):
                                             bgcolor="#3EAEB1",
                                             color="white",
                                             width=150,
-                                            style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=20)),
+                                            style=ft.ButtonStyle(
+                                                shape=ft.RoundedRectangleBorder(radius=20),
+                                                overlay_color={"": "#C0392B"},
+                                                text_style={"": ft.TextStyle(
+                                                    font_family="Oswald",
+                                                    size=14,
+                                                    weight=ft.FontWeight.W_600,
+                                                    color="white"
+                                                )}
+                                            ),
                                             on_click=guardar_contraseña
                                         ),
                                         ft.ElevatedButton(
@@ -288,7 +297,18 @@ def pantalla_configuracion(page: ft.Page, cambiar_pantalla=None):
                                             bgcolor="#F2F2F2",
                                             color="black",
                                             width=150,
-                                            style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=20)),
+                                            style=ft.ButtonStyle(
+                                                shape=ft.RoundedRectangleBorder(radius=20),
+                                                bgcolor="#f8f8f8",
+                                                color="black",
+                                                side=ft.BorderSide(1, "#E5E5E5"),
+                                                text_style={"": ft.TextStyle(
+                                                    font_family="Oswald",
+                                                    size=14,
+                                                    weight=ft.FontWeight.W_500,
+                                                    color="black"
+                                                )}
+                                            ),
                                             on_click=lambda e: mostrar_configuracion()
                                         )
                                     ]
@@ -379,7 +399,16 @@ def pantalla_configuracion(page: ft.Page, cambiar_pantalla=None):
                                             bgcolor="#3EAEB1",
                                             color="white",
                                             width=170,
-                                            style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=20)),
+                                            style=ft.ButtonStyle(
+                                                shape=ft.RoundedRectangleBorder(radius=20),
+                                                overlay_color={"": "#C0392B"},
+                                                text_style={"": ft.TextStyle(
+                                                    font_family="Oswald",
+                                                    size=14,
+                                                    weight=ft.FontWeight.W_600,
+                                                    color="white"
+                                                )}
+                                            ),
                                             on_click=validar_y_abrir_modal
                                         ),
                                         ft.ElevatedButton(
@@ -387,7 +416,18 @@ def pantalla_configuracion(page: ft.Page, cambiar_pantalla=None):
                                             bgcolor="#F2F2F2",
                                             color="black",
                                             width=150,
-                                            style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=20)),
+                                            style=ft.ButtonStyle(
+                                                shape=ft.RoundedRectangleBorder(radius=20),
+                                                bgcolor="#f8f8f8",
+                                                color="black",
+                                                side=ft.BorderSide(1, "#E5E5E5"),
+                                                text_style={"": ft.TextStyle(
+                                                    font_family="Oswald",
+                                                    size=14,
+                                                    weight=ft.FontWeight.W_500,
+                                                    color="black"
+                                                )}
+                                            ),
                                             on_click=lambda e: mostrar_configuracion()
                                         )
                                     ]

@@ -80,6 +80,13 @@ class ModalReporte:
                                     width=110,
                                     style=ft.ButtonStyle(
                                         shape=ft.RoundedRectangleBorder(radius=20),
+                                        overlay_color={"": "#C0392B"},
+                                        text_style={"": ft.TextStyle(
+                                            font_family="Oswald",
+                                            size=14,
+                                            weight=ft.FontWeight.W_600,
+                                            color="white"
+                                        )}
                                     )
                                 ),
                                 ft.OutlinedButton(
@@ -88,9 +95,16 @@ class ModalReporte:
                                     width=110,
                                     style=ft.ButtonStyle(
                                         shape=ft.RoundedRectangleBorder(radius=20),
-                                        bgcolor="#F2F2F2",
+                                        bgcolor="#f8f8f8",
                                         color="black",
-                                    )
+                                        side=ft.BorderSide(1, "#E5E5E5"),
+                                        text_style={"": ft.TextStyle(
+                                            font_family="Oswald",
+                                            size=14,
+                                            weight=ft.FontWeight.W_500,
+                                            color="black"
+                                        )}
+                                    ),
                                 ),
                             ],
                             alignment=ft.MainAxisAlignment.CENTER,

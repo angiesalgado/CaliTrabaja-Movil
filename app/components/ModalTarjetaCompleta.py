@@ -44,7 +44,7 @@ class ModalTarjetaCompleta:
         print(f"RUTA IMAGEN {img_url}")
 
         tarjeta_completa = ft.Container(
-            width=380 if not es_pantalla_pequena else ft.infinity,
+            width=380 if not es_pantalla_pequena else page.width,
             padding=ft.padding.only(top=5, left=15, right=15, bottom=10),
             bgcolor="white",
             border_radius=20,

@@ -165,13 +165,21 @@ def pantalla_inicio(page: ft.Page, cambiar_pantalla, sio=None, user_id_global=No
     contenedor_frase = ft.Container(
         content=frase_texto,
         alignment=ft.alignment.center,
-        width=page.width,
         height=90,
         bgcolor="#D9D9D9",
         border_radius=ft.border_radius.all(2),
         margin=ft.margin.symmetric(horizontal=8, vertical=5),
         padding=14
     )
+
+    # Ajuste responsivo para móviles
+    if page.width <= 768:
+        contenedor_frase.width = page.width - 16  # resta los márgenes
+        contenedor_frase.margin = ft.margin.symmetric(horizontal=8, vertical=5)
+    else:
+        contenedor_frase.width = page.width * 0.9  # en pantallas grandes ocupa el 90%
+        contenedor_frase.margin = ft.margin.symmetric(horizontal=page.width * 0.05, vertical=5)
+
 
     async def cambiar_frase():
         index = 1
@@ -727,6 +735,14 @@ def pantalla_inicio(page: ft.Page, cambiar_pantalla, sio=None, user_id_global=No
         )
     )
 
+    # Ajuste responsivo para la sección "Crear cuenta"
+    if page.width <= 768:
+        crear_cuenta_container.width = page.width - 16  # resta márgenes (8px a cada lado)
+        crear_cuenta_container.margin = ft.margin.symmetric(horizontal=8, vertical=20)
+    else:
+        crear_cuenta_container.width = page.width * 0.9  # ocupa el 90% del ancho
+        crear_cuenta_container.margin = ft.margin.symmetric(horizontal=page.width * 0.05, vertical=20)
+
     # ---------------- SERVICIOS DESTACADOS ----------------
     destacados_container = ft.Column(
         [
@@ -804,12 +820,31 @@ def pantalla_inicio(page: ft.Page, cambiar_pantalla, sio=None, user_id_global=No
             ),
         ],
         expand=True,
-        scroll=ft.ScrollMode.ADAPTIVE  # 👈 Permite scroll del contenido
+        scroll=ft.ScrollMode.HIDDEN  # 👈 Permite scroll del contenido
     )
 
     # Agregar layout a la página
     page.add(layout)
     _config_pagination()
+
+    # ---------------- DETECTOR DE CAMBIO DE TAMAÑO (RESPONSIVE) ----------------
+    def on_resize(e: ft.ControlEvent):
+        # Ajusta el ancho del contenedor de frase
+        if page.width <= 768:
+            contenedor_frase.width = page.width - 16
+            contenedor_frase.margin = ft.margin.symmetric(horizontal=8, vertical=5)
+        else:
+            contenedor_frase.width = page.width * 0.9
+            contenedor_frase.margin = ft.margin.symmetric(horizontal=page.width * 0.05, vertical=5)
+
+        # Vuelve a configurar la paginación de categorías y publicaciones
+        _config_pagination()
+        _config_pagination_publi()
+        page.update()
+
+    # Asigna el evento al cambio de tamaño
+    page.on_resize = on_resize
+
 
     # ---------------- NAV INFERIOR (BottomAppBar) ----------------
     page.bottom_appbar = ft.BottomAppBar(

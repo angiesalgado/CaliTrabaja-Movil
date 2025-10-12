@@ -489,8 +489,13 @@ def publicaciones(page: ft.Page, cambiar_pantalla, origen=None):
             right=10,
         )
 
+        # Ajuste dinámico de ancho de tarjeta
+        tarjeta_width = (
+            page.width * 0.42 if page.width <= 480 else 179
+        )
+
         return ft.Container(
-            width=179,
+            width=tarjeta_width,
             height=310,
             padding=8,
             bgcolor="white",
@@ -503,7 +508,7 @@ def publicaciones(page: ft.Page, cambiar_pantalla, origen=None):
                         content=menu,
                         width=40,
                         height=40,
-                        top=0,  # más arriba
+                        top=0,
                         right=0,
                         bgcolor="transparent"
                     ),
@@ -528,10 +533,15 @@ def publicaciones(page: ft.Page, cambiar_pantalla, origen=None):
                          ([tarjeta_horizontal(**publicaciones[i + 1])]
                           if i + 1 < len(publicaciones) else []),
                 spacing=7,
-                alignment=ft.MainAxisAlignment.START
+                alignment=(
+                    ft.MainAxisAlignment.CENTER if page.width <= 480
+                    else ft.MainAxisAlignment.START
+                ),
+                wrap=True  # 🔹 Permite que salten de línea si no caben
             ),
             padding=ft.padding.symmetric(horizontal=5)
         )
+
         grid_column.controls.append(fila)
 
     back_action = lambda e: cambiar_pantalla("categorias") if origen == "categorias" else cambiar_pantalla("menu")

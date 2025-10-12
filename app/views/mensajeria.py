@@ -682,14 +682,34 @@ def mostrar_modal_eliminar_mensaje(page, mensaje_id=None, chat_container=None, o
         bgcolor="#3EAEB1",
         color=ft.Colors.WHITE,
         width=110,
-        style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=20)),
+        style=ft.ButtonStyle(
+            shape=ft.RoundedRectangleBorder(radius=20),
+            overlay_color={"": "#C0392B"},
+            text_style={"": ft.TextStyle(
+                font_family="Oswald",
+                size=14,
+                weight=ft.FontWeight.W_600,
+                color="white"
+            )}
+        ),
         on_click=confirmar_eliminar,
     )
 
     btn_cancelar = ft.OutlinedButton(
         "Cancelar",
         width=110,
-        style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=20)),
+        style=ft.ButtonStyle(
+            shape=ft.RoundedRectangleBorder(radius=20),
+            bgcolor="#f8f8f8",
+            color="black",
+            side=ft.BorderSide(1, "#E5E5E5"),
+            text_style={"": ft.TextStyle(
+                font_family="Oswald",
+                size=14,
+                weight=ft.FontWeight.W_500,
+                color="black"
+            )}
+        ),
         on_click=cancelar,
     )
 
@@ -739,6 +759,18 @@ def obtener_token(page):
 def mostrar_modal_calificar(page, receptor_id):
     print("📨 ID del usuario a calificar:", receptor_id)
     calificacion = {"valor": 0}
+
+    # Tamaño de estrellas y espacio entre ellas según ancho
+    if page.width < 400:
+        estrella_size = 24  # más pequeña
+        estrella_spacing = 4  # menos espacio
+        btn_width = 80  # ancho de botones más pequeño
+        btn_font_size = 12  # tamaño de texto más pequeño
+    else:
+        estrella_size = 34
+        estrella_spacing = 10
+        btn_width = 110
+        btn_font_size = 14
 
     def actualizar_estrellas(valor):
         for i, estrella in enumerate(estrellas, start=1):
@@ -795,7 +827,7 @@ def mostrar_modal_calificar(page, receptor_id):
         estrella = ft.IconButton(
             icon=ft.Icons.STAR_BORDER,
             icon_color="#3EAEB1",
-            icon_size=34,
+            icon_size=estrella_size,
             on_click=lambda e, v=i: actualizar_estrellas(v)
         )
         estrellas.append(estrella)
@@ -823,20 +855,48 @@ def mostrar_modal_calificar(page, receptor_id):
         ),
     )
 
+    # Tamaño dinámico según ancho de página
+    if page.width < 400:
+        btn_width = 100
+        btn_font_size = 12
+    else:
+        btn_width = 110
+        btn_font_size = 14
+
     # Botones
     btn_guardar = ft.ElevatedButton(
         "Guardar",
         bgcolor="#3EAEB1",
         color=ft.Colors.WHITE,
-        width=110,
-        style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=20)),
+        width=btn_width,
+        style=ft.ButtonStyle(
+            shape=ft.RoundedRectangleBorder(radius=20),
+            overlay_color={"": "#C0392B"},
+            text_style={"": ft.TextStyle(
+                font_family="Oswald",
+                size=14,
+                weight=ft.FontWeight.W_600,
+                color="white"
+            )}
+        ),
         on_click=guardar_calificacion,
     )
 
     btn_cancelar = ft.OutlinedButton(
         "Cancelar",
-        width=110,
-        style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=20)),
+        width=btn_width,
+        style=ft.ButtonStyle(
+            shape=ft.RoundedRectangleBorder(radius=20),
+            bgcolor="#f8f8f8",
+            color="black",
+            side=ft.BorderSide(1, "#E5E5E5"),
+            text_style={"": ft.TextStyle(
+                font_family="Oswald",
+                size=14,
+                weight=ft.FontWeight.W_500,
+                color="black"
+            )}
+        ),
         on_click=cancelar_calificacion,
     )
 
@@ -849,7 +909,6 @@ def mostrar_modal_calificar(page, receptor_id):
             height=260,
             bgcolor="#FFFFFF",
             border_radius=20,
-            padding=ft.padding.only(top=15, bottom=15, left=20, right=20),
             content=ft.Column(
                 [
                     ft.Text(
@@ -863,7 +922,7 @@ def mostrar_modal_calificar(page, receptor_id):
                     ft.Row(
                         controls=estrellas,
                         alignment=ft.MainAxisAlignment.CENTER,
-                        spacing=0
+                        spacing=estrella_spacing
                     ),
                     reseña,
                     ft.Row(
