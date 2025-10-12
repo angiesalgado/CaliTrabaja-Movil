@@ -398,7 +398,7 @@ def pantalla_configuracion(page: ft.Page, cambiar_pantalla=None):
                                             "Deshabilitar cuenta",
                                             bgcolor="#3EAEB1",
                                             color="white",
-                                            width=170,
+                                            width=150,
                                             style=ft.ButtonStyle(
                                                 shape=ft.RoundedRectangleBorder(radius=20),
                                                 overlay_color={"": "#C0392B"},
@@ -567,10 +567,10 @@ def mostrar_modal_eliminar_cuenta(page, token, cambiar_pantalla):
 
     # Botón rojo: eliminar
     btn_eliminar = ft.ElevatedButton(
-        "Eliminar cuenta",
+        "Eliminar",
         bgcolor="#E74C3C",
         color=ft.Colors.WHITE,
-        width=150,
+        width=100,
         style=ft.ButtonStyle(
             shape=ft.RoundedRectangleBorder(radius=20),
             overlay_color={"": "#C0392B"},
@@ -587,7 +587,7 @@ def mostrar_modal_eliminar_cuenta(page, token, cambiar_pantalla):
     # Botón gris: cancelar
     btn_cancelar = ft.OutlinedButton(
         "Cancelar",
-        width=110,
+        width=100,
         style=ft.ButtonStyle(
             shape=ft.RoundedRectangleBorder(radius=20),
             bgcolor="#f8f8f8",
@@ -646,5 +646,7 @@ def mostrar_modal_eliminar_cuenta(page, token, cambiar_pantalla):
     if modal not in page.overlay:
         page.overlay.append(modal)
 
+
     modal.open = True
     page.update()
+
