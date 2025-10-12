@@ -11,17 +11,7 @@ class ModalTarjetaCompleta:
 
     def set_content(self, foto_perfil, nombre, profesion, descripcion, costo, calificacion, page: ft.Page = None):
 
-        stars = ft.Row(
-            [
-                ft.Icon(
-                    ft.Icons.STAR if i < calificacion else ft.Icons.STAR_BORDER,
-                    color="#3EAEB1",
-                    size=16
-                ) for i in range(5)
-            ],
-            spacing=2,
-            alignment=ft.MainAxisAlignment.CENTER
-        )
+
 
         # Botón "X"
         cerrar_btn = ft.IconButton(
@@ -73,7 +63,7 @@ class ModalTarjetaCompleta:
                         size=18 if es_pantalla_pequena else 20,
                         text_align=ft.TextAlign.CENTER
                     ),
-                    stars,
+
                     ft.Text(
                         profesion,
                         size=13 if es_pantalla_pequena else 15,

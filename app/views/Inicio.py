@@ -482,18 +482,6 @@ def pantalla_inicio(page: ft.Page, cambiar_pantalla, sio=None, user_id_global=No
 
         mostrar_boton = len(descripcion) > 70
 
-        stars = ft.Row(
-            [
-                ft.Icon(
-                    ft.Icons.STAR if i < calificacion else ft.Icons.STAR_BORDER,
-                    color=PRIMARY_COLOR,
-                    size=14
-                )
-                for i in range(5)
-            ],
-            spacing=0,
-            alignment=ft.MainAxisAlignment.CENTER
-        )
 
         token = obtener_token(page)
 
@@ -555,30 +543,18 @@ def pantalla_inicio(page: ft.Page, cambiar_pantalla, sio=None, user_id_global=No
                         ),
                         height=28,
                     ),
-                    stars,
-                    ft.Container(
-                        content=ft.Text(
-                            categoria,
-                            size=14,
-                            weight=ft.FontWeight.W_500,
-                            color=TEXT_COLOR,
-                            text_align=ft.TextAlign.CENTER,
-                            max_lines=2,
-                            overflow=ft.TextOverflow.ELLIPSIS
-                        ),
-                        height=40,
-                    ),
+
                     ft.Text("Descripción:", size=12, color=ft.Colors.BLACK54, text_align=ft.TextAlign.CENTER),
                     ft.Container(
                         content=ft.Text(
                             descripcion,
                             size=11,
-                            max_lines=1,
+                            max_lines=2,
                             overflow=ft.TextOverflow.ELLIPSIS,
                             color=TEXT_COLOR,
                             text_align=ft.TextAlign.CENTER
                         ),
-                        height=18,
+                        height=30,
                         alignment=ft.alignment.center
                     ),
                     # Botón Ver más
@@ -627,7 +603,7 @@ def pantalla_inicio(page: ft.Page, cambiar_pantalla, sio=None, user_id_global=No
 
         return ft.Container(
             width=179,
-            height=310,
+            height=295,
             padding=8,
             bgcolor="white",
             border_radius=14,

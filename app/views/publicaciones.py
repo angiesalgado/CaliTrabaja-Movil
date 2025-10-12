@@ -358,12 +358,7 @@ def publicaciones(page: ft.Page, cambiar_pantalla, origen=None):
                            calificacion=4):
         mostrar_boton = len(descripcion) > 70
 
-        stars = ft.Row(
-            [ft.Icon(ft.Icons.STAR if i < calificacion else ft.Icons.STAR_BORDER,
-                     color=PRIMARY_COLOR, size=14) for i in range(5)],
-            spacing=0,
-            alignment=ft.MainAxisAlignment.CENTER
-        )
+
         token = obtener_token(page)
 
         if token is None:
@@ -415,7 +410,7 @@ def publicaciones(page: ft.Page, cambiar_pantalla, origen=None):
                         height=28,
                     ),
 
-                    stars,
+
 
                     ft.Container(
                         content=ft.Text(
