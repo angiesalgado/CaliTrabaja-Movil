@@ -7,6 +7,7 @@ import requests
 import time
 from app.API_services.guardar_calificacion import enviar_calificacion
 from app.API_services.guardar_reporte import enviar_reporte
+from app.API_services.mensajeria import obtener_conversaciones
 
 # -------------------
 # NAV SUPERIOR DE CHATS (gris)
@@ -81,15 +82,10 @@ def lista_chats(page: ft.Page, cambiar_pantalla, sio, user_id_global):
     def reportar(e):
         contacto = e.control.data
         reportado_id = contacto.get("usuario_id")
-
         token = obtener_token(page)
 
         def guardar_reporte(descripcion):
-            datos = {
-                "descripcion": descripcion,
-                "reportado_id": reportado_id
-            }
-
+            datos = {"descripcion": descripcion, "reportado_id": reportado_id}
             if not token:
                 page.snack_bar = ft.SnackBar(
                     content=ft.Text("Inicia sesión para enviar un reporte."),
@@ -100,81 +96,73 @@ def lista_chats(page: ft.Page, cambiar_pantalla, sio, user_id_global):
                 return
 
             respuesta = enviar_reporte(token, datos)
-
-            if respuesta.get("success"):
-                page.snack_bar = ft.SnackBar(
-                    content=ft.Text(" Reporte enviado correctamente."),
-                    bgcolor="#3EAEB1"
-                )
-            else:
-                page.snack_bar = ft.SnackBar(
-                    content=ft.Text(f" {respuesta.get('message', 'Error al enviar reporte.')}"),
-                    bgcolor="red"
-                )
+            page.snack_bar = ft.SnackBar(
+                content=ft.Text("Reporte enviado correctamente." if respuesta.get("success") else "Error al enviar reporte."),
+                bgcolor="#3EAEB1" if respuesta.get("success") else "red"
+            )
             page.snack_bar.open = True
             page.update()
 
-        # Conectamos la función al modal y lo abrimos
         modal_reporte.on_guardar = guardar_reporte
         modal_reporte.show(page)
 
+    # ✅ Llamada al endpoint correcto del backend Flask móvil
+    try:
+        url = f"http://127.0.0.1:5000/movil/conversaciones/{user_id_global}"
+        print(f"📡 Solicitando conversaciones desde: {url}")
+        resp = requests.get(url, timeout=5)
+        resp.raise_for_status()
+        data = resp.json()
+        print("✅ Conversaciones recibidas:", data)
+    except Exception as e:
+        print(f"❌ Error al obtener conversaciones: {e}")
+        data = []
 
-
-    # Aquí pedimos los chats reales al backend
-    token = getattr(page, "session_token", None)
-    headers = {"Authorization": f"Bearer {token}"} if token else {}
-    resp = requests.get("http://127.0.0.1:5000/api/chats", headers=headers)
-    print("TEXT:", resp.text)
-
-    data = resp.json()
-
-    chats = data.get("chats", [])  # <- tu backend debe devolver [{"usuario_id":..,"nombre":..,"ultimo":..,"foto":..,"hora":..}, ...]
+    chats = data  # El endpoint ya devuelve una lista directa
 
     items = []
     for c in chats:
-        receptor_id = c["usuario_id"]
-        nombre = c.get("nombre", "")
-        ultimo = c.get("ultimo_texto", "")
-        hora = formatear_fecha_hora(c.get("hora"))
-        img_src = c.get("foto") or "https://via.placeholder.com/150"
+        receptor_id = c.get("usuario_id")
+        nombre = c.get("nombre", "Usuario desconocido")
+        ultimo = c.get("ultimo_mensaje", "")
+        hora = c.get("fecha", "").split(" ")[1][:5] if c.get("fecha") else ""
+        foto = c.get("foto")
 
-        # 🔹 Popup menu (Calificar - Reportar - Eliminar)
+        # Si la foto existe en el servidor Flask
+        if foto:
+            img_src = f"http://127.0.0.1:5000/{foto}"
+        else:
+            img_src = "https://via.placeholder.com/150"
+
         popup_menu = ft.PopupMenuButton(
             icon=ft.Icons.MORE_HORIZ,
             items=[
                 ft.PopupMenuItem(
-                    content=ft.Row(
-                        controls=[
-                            ft.Icon(ft.Icons.STAR_RATE_OUTLINED, color="#3EAEB1", size=18),
-                            ft.Text("Calificar", color="black"),
-                        ]
-                    ),
+                    content=ft.Row([
+                        ft.Icon(ft.Icons.STAR_RATE_OUTLINED, color="#3EAEB1", size=18),
+                        ft.Text("Calificar", color="black"),
+                    ]),
                     on_click=lambda e, rid=receptor_id: mostrar_modal_calificar(page, receptor_id=rid),
                 ),
                 ft.PopupMenuItem(
-                    content=ft.Row(
-                        controls=[
-                            ft.Icon(ft.Icons.ERROR_OUTLINE, color="#3EAEB1", size=18),
-                            ft.Text("Reportar", color="black"),
-                        ]
-                    ),
+                    content=ft.Row([
+                        ft.Icon(ft.Icons.ERROR_OUTLINE, color="#3EAEB1", size=18),
+                        ft.Text("Reportar", color="black"),
+                    ]),
                     data=c,
                     on_click=reportar,
-                ),
-                ft.PopupMenuItem(
-                    content=ft.Row(
-                        controls=[
-                            ft.Icon(ft.Icons.DELETE_OUTLINE, color="#3EAEB1", size=18),
-                            ft.Text("Eliminar", color="black"),
-                        ]
-                    ),
-                    data=c,
-                    on_click=lambda e: mostrar_modal_eliminar_mensaje(page, mensaje_id=c.get("id", "123")),
                 ),
             ],
         )
 
-        # 🔹 Card del chat
+        visto = c.get("visto", False)
+
+        # 🔹 Ícono según el estado del mensaje
+        if visto:
+            estado_icono = ft.Icon(ft.Icons.DONE_ALL, color="#3EAEB1", size=16)  # ✅ visto
+        else:
+            estado_icono = ft.Icon(ft.Icons.DONE, color=ft.Colors.GREY, size=16)  # ✔️ enviado
+
         items.append(
             ft.GestureDetector(
                 on_tap=lambda e, receptor_id=receptor_id: cambiar_pantalla("chat", receptor_id=receptor_id),
@@ -187,13 +175,19 @@ def lista_chats(page: ft.Page, cambiar_pantalla, sio, user_id_global):
                             ft.Row(
                                 spacing=10,
                                 controls=[
-                                    ft.CircleAvatar(foreground_image_src=img_src),
+                                    ft.CircleAvatar(foreground_image_src=img_src, radius=25),
                                     ft.Column(
                                         spacing=2,
                                         alignment=ft.MainAxisAlignment.START,
                                         controls=[
                                             ft.Text(nombre, weight="bold", color=ft.Colors.BLACK, no_wrap=True),
-                                            ft.Text(ultimo, size=12, color=ft.Colors.GREY, no_wrap=True),
+                                            ft.Row(
+                                                spacing=4,
+                                                controls=[
+                                                    estado_icono,
+                                                    ft.Text(ultimo, size=12, color=ft.Colors.GREY, no_wrap=True),
+                                                ]
+                                            ),
                                         ]
                                     ),
                                 ]
@@ -203,7 +197,7 @@ def lista_chats(page: ft.Page, cambiar_pantalla, sio, user_id_global):
                                 vertical_alignment=ft.CrossAxisAlignment.CENTER,
                                 controls=[
                                     ft.Text(hora, size=11, color=ft.Colors.GREY),
-                                    popup_menu  # ⬅️ Menú añadido
+                                    popup_menu
                                 ],
                             ),
                         ],
@@ -212,18 +206,12 @@ def lista_chats(page: ft.Page, cambiar_pantalla, sio, user_id_global):
             )
         )
 
-    # callback menú inferior
     def on_bottom_nav_click(index):
-        if index == 0:
-            cambiar_pantalla("inicio")
-        elif index == 1:
-            cambiar_pantalla("categorias")
-        elif index == 2:
-            cambiar_pantalla("mensajes")
-        elif index == 3:
-            cambiar_pantalla("guardados")
-        elif index == 4:
-            cambiar_pantalla("menu")
+        if index == 0: cambiar_pantalla("inicio")
+        elif index == 1: cambiar_pantalla("categorias")
+        elif index == 2: cambiar_pantalla("mensajes")
+        elif index == 3: cambiar_pantalla("guardados")
+        elif index == 4: cambiar_pantalla("menu")
 
     def volver_a_inicio_event(e):
         if callable(cambiar_pantalla):
@@ -252,7 +240,7 @@ def lista_chats(page: ft.Page, cambiar_pantalla, sio, user_id_global):
 mensajes_map = {}
 
 
-def chat_view(page: ft.Page, cambiar_pantalla, sio, user_id_global, receptor_id, receptor_nombre):
+def chat_view(page: ft.Page, cambiar_pantalla, sio, user_id_global, receptor_id, receptor_nombre, mostrar_aviso=False):
     # --- 1. DEFINICIÓN DE CONTROLES Y VARIABLES ---
 
     mensajes_column = ft.ListView(
@@ -284,9 +272,30 @@ def chat_view(page: ft.Page, cambiar_pantalla, sio, user_id_global, receptor_id,
         sio.emit("identify", {"user_id": user_id})
         sio.emit("join_chat", {"user_id": user_id, "other_user_id": receptor_id})
 
-    # ----------------------------------------------------------------------
+        # ----------------------------------------------------------------------
     # --- 3. FUNCIONES AUXILIARES (Definidas primero para evitar NameError) ---
     # ----------------------------------------------------------------------
+
+        # 🔥 AVISO DE INICIO DE CONVERSACIÓN 🔥
+        aviso_chat = ft.Container(
+            content=ft.Text(
+                "💬 Envía un mensaje para iniciar la conversación",
+                color=ft.Colors.GREY_700,
+                italic=True,
+                size=14,
+                text_align=ft.TextAlign.CENTER
+            ),
+            padding=15,
+            alignment=ft.alignment.center,
+            # 🔥 CLAVE: Usa el argumento 'mostrar_aviso' que recibimos 🔥
+            visible=mostrar_aviso,
+            key="aviso_chat_inicio"
+        )
+
+        # Si mostrar_aviso es True, lo añadimos inicialmente al ListView
+        if mostrar_aviso:
+            mensajes_column.controls.append(aviso_chat)
+            # ------------------------------------
 
     def volver(e):
         # 1. Quitar handlers (ESENCIAL para la re-entrada)

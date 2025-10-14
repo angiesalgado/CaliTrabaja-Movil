@@ -49,7 +49,6 @@ def pantalla_inicio(page: ft.Page, cambiar_pantalla, sio=None, user_id_global=No
     page.overlay.append(modal_detalle.dialog)
 
     def contactar_experto_y_navegar(receptor_id, nombre_experto, categoria):
-
         if not usuario_autenticado:
             mostrar_modal_acceso(page, cambiar_pantalla)
             return
@@ -58,35 +57,28 @@ def pantalla_inicio(page: ft.Page, cambiar_pantalla, sio=None, user_id_global=No
             print("❌ ERROR: SocketIO no conectado o user_id desconocido.")
             return
 
-            # 1. 🚨 COMPROBACIÓN Y RECONEXIÓN DE SOCKETIO
-            if user_id_global is None:
-                print("❌ ERROR: user_id_global es None. No se puede conectar.")
-                mostrar_modal_acceso(page, cambiar_pantalla)
-                return
+        import requests
 
-            if not sio.connected:
-                try:
-                    # Reintentar conectar con la URL de tu backend y el ID del usuario
-                    sio.connect("http://127.0.0.1:5000", auth={"user_id": user_id_global})
-                    print(f"✅ SocketIO reconectado con ID: {user_id_global}")
-                except Exception as e:
-                    print(f"❌ Fallo crítico al reconectar SocketIO: {e}")
-                    # Aquí podrías mostrar un error al usuario.
-                    return
+        # ✅ 1. Verificar si ya existe una conversación
+        try:
+            url = f"http://127.0.0.1:5000/api/conversacion/existe/{user_id_global}/{receptor_id}"
+            resp = requests.get(url)
+            data = resp.json()
+            existe_chat = data.get("existe", False)
+        except Exception as e:
+            print("❌ Error verificando conversación:", e)
+            existe_chat = False
 
-        mensaje_predeterminado = (
-            f"Hola, estoy interesado/a en tu servicio de {categoria}. "
-            "¿Podrías darme más detalles sobre la disponibilidad y tarifas?"
-        )
+        # ✅ 2. Solo mostrar un aviso en consola (sin enviar mensaje automático)
+        if not existe_chat:
+            print(f"ℹ No existe conversación previa con {nombre_experto}. Se abrirá el chat vacío.")
+        else:
+            print(f"✅ Ya existe conversación con {nombre_experto}.")
 
-        sio.emit("send_message", {
-            "user_id": user_id_global,
-            "other_user_id": receptor_id,
-            "texto": mensaje_predeterminado
-        })
+        mostrar_aviso = not existe_chat
 
-        # Navegar directamente al chat
-        cambiar_pantalla("chat", receptor_id=receptor_id, receptor_nombre=nombre_experto)
+        # ✅ 3. Abrir el chat
+        cambiar_pantalla("chat", receptor_id=receptor_id, receptor_nombre=nombre_experto, mostrar_aviso=mostrar_aviso)
 
     def abrir_modal_detalle(foto_perfil, nombre, profesion, descripcion, costo, calificacion):
         print("CLICK -> abrir_modal_detalle:", nombre)  # <-- mira la consola donde corres Flet
